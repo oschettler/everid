@@ -2,7 +2,8 @@
   "require": {
     "php": ">= 5.4.0",
     "dispatch/dispatch": "2.*",
-    "j4mie/idiorm": "*"
+    "j4mie/idiorm": "*",
+    "evernote/evernote": "*"
   }
 }
 
