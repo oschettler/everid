@@ -15,7 +15,10 @@ config('dispatch.views', './views');
 config('source', 'settings.ini');
 
 on('GET', '/', function () {
-  render('index', array('page_title' => 'EverID - Publish from Evernote to the web'));
+  render('index', array(
+    'site_name' => 'EverID',
+    'page_title' => 'Publish<br>from Evernote<br>to the web'
+  ));
 });
 
 on('GET', '/update', function () {
@@ -42,6 +45,8 @@ on('GET', '/update', function () {
 prefix('auth', function () {
 
   on('GET', '/callback', function () {
+    require_once 'evernote_auth.php';
+  
     if (handleCallback()) {
         if (getTokenCredentials()) {
             listNotebooks();
@@ -50,6 +55,8 @@ prefix('auth', function () {
   });
   
   on('GET', '/authorize', function () {
+    require_once 'evernote_auth.php';
+
     if (getTemporaryCredentials()) {
         // We obtained temporary credentials, now redirect the user to evernote.com to authorize access
         header('Location: ' . getAuthorizationUrl());
@@ -57,6 +64,8 @@ prefix('auth', function () {
   });
 
   on('GET', '/reset', function () {
+    require_once 'evernote_auth.php';
+
     resetSession();
   });
 
