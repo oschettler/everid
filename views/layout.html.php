@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
   </head>
   <body>
-    <?php partial('alert'); ?>
+    <?php echo partial('alert'); ?>
     <?php
     echo partial('navbar', array(
       'site_name' => $site_name, 
@@ -21,5 +21,12 @@
     </div>
     <script src="//code.jquery.com/jquery.js"></script>
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script>
+    jQuery(function ($) {
+      setTimeout(function () {
+        $('.alert').slideUp('fast');
+      }, 3000);
+    });
+    </script>
   </body>
 </html>
