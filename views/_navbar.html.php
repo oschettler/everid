@@ -11,7 +11,7 @@
     <div class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li class="active">
-          <a href="#">Home</a>
+          <a href="/">Home</a>
         </li>
         <li>
           <a href="#about">About</a>
@@ -28,7 +28,7 @@
             <a href="#" class="dropdown-toggle" data-toggle="dropdown"><?php echo $account->username; ?> <b class="caret"></b></a>
             <ul class="dropdown-menu">
               <li>
-                <a href="/edit">Edit weblog</a>
+                <a href="/user/edit">Edit</a>
               </li>
               <li>
                 <a href="/auth/logout">Logout</a>

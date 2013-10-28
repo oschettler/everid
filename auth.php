@@ -32,7 +32,7 @@ on('GET', '/callback', function () {
         // The authenticated action
 
         flash('success', 'Welcome back');
-        redirect('/update');
+        redirect('/user/update');
       } 
       else {
         flash('error', 'Failed to obtain token credentials.');
