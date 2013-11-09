@@ -1,5 +1,5 @@
 <h1>Edit User</h1>
-<form role="form" method="POST">
+<form id="edit-user" role="form" method="POST">
   <div class="form-group">
     <label for="name">Site name</label>
     <input type="text" class="form-control" name="name" id="name-field" placeholder="Enter name" value="<?php echo $name; ?>">
@@ -26,14 +26,34 @@
       ?>
     </select>
   </div>
-  <div class="form-group nav-edit">
-    <label for="navigation">Navigation</label>
-    <input type="hidden" name="navigation" value="<?php echo $navigation; ?>">
-    <?php
-    echo $nav_tree;
-    ?>
+  <div class="form-group">
+    <input name="navigation" id="navigation-field" type="hidden">
+    <label>Navigation</label>
+    <div class="well" id="outliner"></div>
   </div>
   <div class="form-group buttons">
     <button type="submit" class="btn btn-default">Save</button>
   </div>
 </form>
+<script type="text/javascript">
+jQuery(function ($) {
+	$("#outliner").concord({
+		"prefs": {
+		/*
+			"outlineFont": "Georgia", 
+			"outlineFontSize": 18, 
+			"outlineLineHeight": 24,
+    */
+			"renderMode": false,
+			"readonly": false,
+			"typeIcons": appTypeIcons
+		},
+  });
+	opXmlToOutline("<?php echo addslashes(str_replace("\r\n", '', $navigation)); ?>");
+	
+	$('#edit-user').submit(function () {
+  	$('#navigation-field').val(opOutlineToXml().replace(/"/g, '&quot;'));
+  	return true;
+	});
+});
+</script>

@@ -7,7 +7,19 @@
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="http://rawgithub.com/scripting/concord/master/concord.css"/>
+    <link rel="stylesheet" href="/concord/concord.css"/>
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="/concord/concord.js"></script>
+    <script src="/concord/concordUtils.js"></script>
+    <script>
+    jQuery(function ($) {
+      setTimeout(function () {
+        $('.alert').slideUp('fast');
+      }, 3000);
+    });
+    </script>
   </head>
   <body>
     <?php echo partial('alert'); ?>
@@ -21,17 +33,5 @@
     <div class="container">
       <?php echo content(); ?>
     </div>
-    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-    <script src="http://rawgithub.com/scripting/concord/master/concord.js"></script>
-    <script src="http://rawgithub.com/scripting/concord/master/concordUtils.js"></script>
-    <script>
-    jQuery(function ($) {
-      setTimeout(function () {
-        $('.alert').slideUp('fast');
-      }, 3000);
-      $('.nav-edit li').draggable();
-    });
-    </script>
   </body>
 </html>

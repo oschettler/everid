@@ -95,14 +95,19 @@ on('GET', '/edit', function () {
   foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
     $notebooks[$notebook->guid] = $notebook->name; 
   }
+  
+  $navigation = $account->navigation;
+  if (empty($navigation)) {
+    $navigation = '<?xml version="1.0" encoding="UTF-8"?><opml version="2.0"><head><title>Navigation</title></head><body><outline text=""/></body></opml>';
+  }
 
   render('edit', array(
     'name' => $account->name,
     'title' => $account->title,
     'notebook' => $account->notebook,
     'notebooks' => $notebooks,
-    'nav_tree' => navigation(json_decode($account->navigation)),
-    'navigation' => $account->navigation,
+    //'nav_tree' => navigation(json_decode($account->navigation)),
+    'navigation' => $navigation,
 
     'site_name' => config('site.name'),
     'page_title' => config('site.title'),
@@ -123,6 +128,7 @@ on('POST', '/edit', function () {
   foreach (array('name', 'title', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
+  $account->navigation = preg_replace('/&quot;/', '"', $_POST['navigation']);
   $account->save();
   flash('success', 'Account has been saved');
   redirect('/user/edit');
