@@ -11,12 +11,19 @@ body {
   width: 90%;
 }
 
-.form-group.nav-edit ul.level-0 {
-  border: solid 1px #CCC;
+.form-group.navigation {
+  position: relative;
 }
 
-.form-group.nav-edit li:hover {
-  background-color: #CCC;
+#outliner-nav {
+  position: absolute;
+  top: 2em;
+  right: 4px;
+}
+
+.menuKeystroke {
+  float: right;
+  margin-left: 30px;
 }
 
 .divOutlinerContainer { 
