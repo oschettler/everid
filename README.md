@@ -4,6 +4,11 @@ Websites from Evernote notebooks
 
 ## Installation
 
+### Submodules
+
+    git submodules init
+    git submodules update
+
 ### Composer
 
     curl -sS https://getcomposer.org/installer | php
@@ -15,6 +20,4 @@ Websites from Evernote notebooks
     source ~olav/.bash_profile
     pecl install oauth
     echo 'extension=oauth.so' > 20-oauth.ini
-
-
 
