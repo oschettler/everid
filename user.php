@@ -107,7 +107,7 @@ on('GET', '/edit', function () {
     'notebook' => $account->notebook,
     'notebooks' => $notebooks,
     //'nav_tree' => navigation(json_decode($account->navigation)),
-    'navigation' => $navigation,
+    'navigation' => json_encode($navigation),
 
     'site_name' => config('site.name'),
     'page_title' => config('site.title'),
@@ -128,10 +128,29 @@ on('POST', '/edit', function () {
   foreach (array('name', 'title', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
-  $account->navigation = preg_replace('/&quot;/', '"', $_POST['navigation']);
+  //$account->navigation = preg_replace('/&quot;/', '"', $_POST['navigation']);
   $account->save();
   flash('success', 'Account has been saved');
-  redirect('/user/edit');
+  //redirect('/user/edit');
+  echo "OK";
+});
+
+on('POST', '/nav-open', function () {
+  $account = ORM::for_table('account')
+    ->where_equal('token', $_SESSION['accessToken'])
+    ->find_one();
+  header('Content-type: text/xml; charset=UTF-8');
+  echo $account->navigation;
+});
+
+on('POST', '/nav-save', function () {
+  $account = ORM::for_table('account')
+    ->where_equal('token', $_SESSION['accessToken'])
+    ->find_one();
+
+  $account->navigation = $_POST['opml'];
+  $account->save();
+  echo json_encode('OK');
 });
 
 on('GET', '/update', function () {

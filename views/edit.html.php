@@ -26,45 +26,17 @@
       ?>
     </select>
   </div>
-  <div class="form-group navigation">
-    <input name="navigation" id="navigation-field" type="hidden">
-    <label>Navigation</label>
-    <div id="outliner-nav" class="btn-group">
-      <button id="rendermode-status" type="button" class="btn btn-default">R</button>
-      <button type="button" class="btn btn-default">2</button>
-
-      <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-chevron-down"></span></button>
-        <ul class="dropdown-menu pull-right" role="menu">
-  				<li><a onclick="opExpand ();"><span class="menuKeystroke">⌘,</span>Expand</a></li>
-  				<li><a onclick="opExpandAllLevels ();">Expand All Subs</a></li>
-  				<li><a onclick="opExpandEverything ();">Expand Everything</a></li>
-  				
-  				<li class="divider"></li>
-  				<li><a onclick="opCollapse ();"><span class="menuKeystroke">⌘.</span>Collapse</a></li>
-  				<li><a onclick="opCollapseEverything ();">Collapse Everything</a></li>
-  				
-  				<li class="divider"></li>
-  				<li><a onclick="opReorg (up, 1);"><span class="menuKeystroke">⌘U</span>Move Up</a></li>
-  				<li><a onclick="opReorg (down, 1);"><span class="menuKeystroke">⌘D</span>Move Down</a></li>
-  				<li><a onclick="opReorg (left, 1);"><span class="menuKeystroke">⌘L</span>Move Left</a></li>
-  				<li><a onclick="opReorg (right, 1);"><span class="menuKeystroke">⌘R</span>Move Right</a></li>
-  				
-  				<li class="divider"></li>
-  				<li><a onclick="opPromote ();"><span class="menuKeystroke">⌘[</span>Promote</a></li>
-  				<li><a onclick="opDemote ();"><span class="menuKeystroke">⌘]</span>Demote</a></li>
-  				
-  				<li class="divider"></li>
-  				<li><a onclick="runSelection ();"><span class="menuKeystroke">⌘/</span>Run Selection</a></li>
-  				<li><a onclick="toggleComment ();"><span class="menuKeystroke">⌘\</span>Toggle Comment</a></li>
-  				
-  				<li class="divider"></li>
-  				<li><a onclick="toggleRenderMode ();"><span class="menuKeystroke">⌘`</span>Toggle Render Mode</a></li>
-        </ul>
-      </div>
+  <div class="row navigation">
+    <div class="col-md-8 main">
+      <?php echo partial('outliner-nav'); ?>
+      <label>Navigation</label>
+      <div class="well" id="outliner"></div>
     </div>
-    <div class="well" id="outliner"></div>
-  </div>
+    <div class="col-md-4 right">
+      <label>Attributes</label>
+        <ul id="attributes"></ul>
+    </div><!-- .col-md-4 -->
+  </div><!- .row .navigation-->
   <div class="form-group buttons">
     <button type="submit" class="btn btn-default">Save</button>
   </div>
@@ -72,22 +44,53 @@
 <script type="text/javascript">
 jQuery(function ($) {
 	$("#outliner").concord({
-		"prefs": {
+	  id: "4142",
+	  open: '/user/nav-open',
+		save: '/user/nav-save',
+		callbacks: {
+  		opCursorMoved: function () {
+  		  var line = '<li><span class="name">{name}</span><span class="value">{value}</span></li>';
+     		$(line).appendTo('#attributes');
+    		var attributes = opGetAtts();
+    		for (var a in attributes) {
+      		if (!attributes.hasOwnAttribute(a)) {
+        		continue;
+      		}
+      		$(line).appendTo('#attributes');
+    		}
+    		console.log("MOVED", attributes);
+  		}
+		},
+		prefs: {
 		/*
 			"outlineFont": "Georgia", 
 			"outlineFontSize": 18, 
 			"outlineLineHeight": 24,
     */
-			"renderMode": false,
-			"readonly": false,
-			"typeIcons": appTypeIcons
+			renderMode: false,
+			readonly: false,
+			typeIcons: appTypeIcons,
 		},
   });
-	opXmlToOutline("<?php echo addslashes(str_replace("\r\n", '', $navigation)); ?>");
+	//opXmlToOutline(<?php echo $navigation; ?>);
 	
 	$('#edit-user').submit(function () {
-  	$('#navigation-field').val(opOutlineToXml().replace(/"/g, '&quot;'));
-  	return true;
+	  var 
+	    $form = $(this),
+	    $outliner = $('#outliner'),
+	    $button = $('[type=submit]', this);
+	 
+    $button.prop('disabled', true);
+	  
+    console.log("SAVING");
+    $.post($form.attr('action'), $form.serialize(), function (data) {
+      console.log("PHASE 1 " + data);
+      $outliner.concord().save(function () {
+        console.log("DONE");
+        $button.prop('disabled', false);
+      });
+    });
+  	return false;
 	});
 	
 	
@@ -122,6 +125,7 @@ jQuery(function ($) {
   /*
 	 * END: Render mode
 	 */
+	 
   
 });
 </script>

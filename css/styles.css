@@ -11,14 +11,14 @@ body {
   width: 90%;
 }
 
-.form-group.navigation {
+.navigation .main {
   position: relative;
 }
 
 #outliner-nav {
   position: absolute;
   top: 2em;
-  right: 4px;
+  right: 18px;
 }
 
 .menuKeystroke {
