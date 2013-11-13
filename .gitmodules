@@ -1,6 +1,6 @@
 [submodule "externals/concord"]
 	path = externals/concord
-	url = https://github.com/scripting/concord.git
+	url = git@github.com:scripting/concord.git
 [submodule "externals/riotjs"]
 	path = externals/riotjs
 	url = https://github.com/moot/riotjs.git
