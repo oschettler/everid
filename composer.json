@@ -4,7 +4,6 @@
     "dispatch/dispatch": "2.*",
     "j4mie/idiorm": "*",
     "evernote/evernote": "*",
-    "opauth/opauth": "*"
   }
 }
 
