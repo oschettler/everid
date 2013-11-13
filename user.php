@@ -2,15 +2,19 @@
 /**
  * Transform OPML to YAML
  */
-function opml2yaml($opml) {
-  $yaml = '';
+function opml2yaml($opml, $level = 0) {
 
-  $xml = simplexml_load_string($opml);
-  foreach ($xml->body->outline as $outline) {
-    $yaml .= "-\n";    
+  $indent = str_repeat(' ', $level);
+  $yaml = '';
+  foreach ($opml as $outline) {
+    $yaml .= "{$indent}-\n";    
 
     foreach ($outline->attributes() as $name => $value) {
-      $yaml .= "  {$name}: {$value}\n";
+      $yaml .= "{$indent}  {$name}: {$value}\n";
+    }
+
+    if (count($outline->outline)) {
+      $yaml .= opml2yaml($outline->outline, 2);
     }
   }
   
@@ -97,9 +101,9 @@ on('GET', '/edit', function () {
     $notebooks[$notebook->guid] = $notebook->name; 
   }
   
-  $navigation = $account->navigation;
-  if (empty($navigation)) {
-    $navigation = '<?xml version="1.0" encoding="UTF-8"?><opml version="2.0"><head><title>Navigation</title></head><body><outline text=""/></body></opml>';
+  $config = $account->config;
+  if (empty($config)) {
+    $config = '<?xml version="1.0" encoding="UTF-8"?><opml version="2.0"><head><title>Config</title></head><body><outline text=""/></body></opml>';
   }
 
   render('edit', array(
@@ -107,8 +111,7 @@ on('GET', '/edit', function () {
     'title' => $account->title,
     'notebook' => $account->notebook,
     'notebooks' => $notebooks,
-    //'nav_tree' => navigation(json_decode($account->navigation)),
-    'navigation' => json_encode($navigation),
+    'config' => json_encode($config),
 
     'site_name' => config('site.name'),
     'page_title' => config('site.title'),
@@ -129,7 +132,6 @@ on('POST', '/edit', function () {
   foreach (array('name', 'title', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
-  //$account->navigation = preg_replace('/&quot;/', '"', $_POST['navigation']);
   $account->save();
   flash('success', 'Account has been saved');
   //redirect('/user/edit');
@@ -141,7 +143,7 @@ on('POST', '/nav-open', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
   header('Content-type: text/xml; charset=UTF-8');
-  echo $account->navigation;
+  echo $account->config;
 });
 
 on('POST', '/nav-save', function () {
@@ -149,7 +151,7 @@ on('POST', '/nav-save', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
-  $account->navigation = $_POST['opml'];
+  $account->config = $_POST['opml'];
   $account->save();
   echo json_encode('OK');
 });
@@ -215,15 +217,19 @@ on('GET', '/update', function () {
         die("Can't copy styles\n");
       }
 
-      file_put_contents(
-        $dir . '_data/navigation.yml',
-        opml2yaml($account->navigation) 
-      );
-      
-      file_put_contents(
-        $dir . '_config.yml',
-        "name: {$notebook->name}
-");
+      $xml = simplexml_load_string($account->config);
+      $config = array();
+      foreach ($xml->body->outline as $outline) {
+        list($name, $yaml) = opml2yaml($outline);
+
+        if ($name == '_config') {
+          $fname = $dir . '_config.yml';           
+        }
+        else {
+          $fname = $dir . '_data/' . preg_replace('/\W+/u', '_', $name) . '.yml';
+        }
+        file_put_contents($fname, $yaml);
+      }
       
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
       foreach ($noteList->notes as $remoteNote) {

@@ -27,17 +27,17 @@
     </select>
   </div>
 
-  <div class="row navigation">
+  <div class="row config">
     <div class="col-md-8 main">
       <?php echo partial('outliner-nav'); ?>
-      <label>Navigation</label>
+      <label>Configuration</label>
       <div class="well" id="outliner"></div>
     </div>
     <div class="col-md-4 right">
       <label>Attributes</label>
       <ul id="attributes"></ul>
     </div><!-- .col-md-4 -->
-  </div><!- .row .navigation-->
+  </div><!- .row .config-->
 
   <div class="form-group buttons">
     <button type="submit" class="btn btn-default">Save</button>
@@ -63,7 +63,6 @@ jQuery(function ($) {
   		  var line = $('#attribute-line').html();
   		  
   		  $('#attributes').html('');
-     		$(line).appendTo('#attributes');
     		var attributes = opGetAtts();
     		for (var a in attributes) {
       		if (!attributes.hasOwnProperty(a)) {
@@ -74,6 +73,7 @@ jQuery(function ($) {
           $line.find('[name=value]').val(attributes[a]);
       		$line.appendTo('#attributes');
     		}
+     		$(line).appendTo('#attributes');
     		console.log("MOVED", attributes);
   		}
 		},
