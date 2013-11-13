@@ -26,6 +26,7 @@
       ?>
     </select>
   </div>
+
   <div class="row navigation">
     <div class="col-md-8 main">
       <?php echo partial('outliner-nav'); ?>
@@ -34,13 +35,23 @@
     </div>
     <div class="col-md-4 right">
       <label>Attributes</label>
-        <ul id="attributes"></ul>
+      <ul id="attributes"></ul>
     </div><!-- .col-md-4 -->
   </div><!- .row .navigation-->
+
   <div class="form-group buttons">
     <button type="submit" class="btn btn-default">Save</button>
   </div>
+
 </form>
+
+<script id="attribute-line" type="html/template">
+<li>
+  <input name="name" placeholder="name">
+  <input name="value" placeholder="value">
+</li>
+</script>
+
 <script type="text/javascript">
 jQuery(function ($) {
 	$("#outliner").concord({
@@ -49,14 +60,19 @@ jQuery(function ($) {
 		save: '/user/nav-save',
 		callbacks: {
   		opCursorMoved: function () {
-  		  var line = '<li><span class="name">{name}</span><span class="value">{value}</span></li>';
+  		  var line = $('#attribute-line').html();
+  		  
+  		  $('#attributes').html('');
      		$(line).appendTo('#attributes');
     		var attributes = opGetAtts();
     		for (var a in attributes) {
-      		if (!attributes.hasOwnAttribute(a)) {
+      		if (!attributes.hasOwnProperty(a)) {
         		continue;
       		}
-      		$(line).appendTo('#attributes');
+          var $line = $(line);
+          $line.find('[name=name]').val(a);
+          $line.find('[name=value]').val(attributes[a]);
+      		$line.appendTo('#attributes');
     		}
     		console.log("MOVED", attributes);
   		}
@@ -72,27 +88,43 @@ jQuery(function ($) {
 			typeIcons: appTypeIcons,
 		},
   });
-	//opXmlToOutline(<?php echo $navigation; ?>);
 	
+	/**
+	 * Save user and outline
+	 */
 	$('#edit-user').submit(function () {
 	  var 
 	    $form = $(this),
 	    $outliner = $('#outliner'),
 	    $button = $('[type=submit]', this);
+	    
+    // Temporarily remove outline attributes out of the form
+    var nav_attributes = $('#attributes').remove();
 	 
     $button.prop('disabled', true);
 	  
     console.log("SAVING");
     $.post($form.attr('action'), $form.serialize(), function (data) {
       console.log("PHASE 1 " + data);
-      $outliner.concord().save(function () {
+        
+      // Add temporarily removed outline attributes again
+      $('div.right').append(nav_attributes);
+
+      function done() {
         console.log("DONE");
         $button.prop('disabled', false);
-      });
+      }
+
+      if (opHasChanged()) {
+        $outliner.concord().save(done);
+      }
+      else {
+        done();
+      }
+
     });
   	return false;
 	});
-	
 	
 	/*
 	 * START: Render mode
@@ -125,7 +157,39 @@ jQuery(function ($) {
   /*
 	 * END: Render mode
 	 */
-	 
+
+  /**
+   * Save attributes
+   */
+  $('div.right').on('blur', '#attributes input', function () {
+    var
+      attributes = {};
+    
+    $('#attributes li').each(function () {
+      var 
+        name = $('input[name=name]', this).val(),
+        value = $('input[name=value]', this).val();
+      
+      if (name != '') {
+        attributes[name] = value;
+      }
+      
+      /*
+      // Prepare to set focus to next input after edit
+      if (prev) {
+        var next = this;
+        $(prev).one('blur', function () {
+          console.log("FOCUS", $('input[name=name]', next).val());
+          $(next).focus();
+        });
+      }
+      prev = this;
+      */
+    });
+    console.log(attributes);
+    opSetAtts(attributes);
+    opRedraw();
+  }); 
   
 });
 </script>

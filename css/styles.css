@@ -38,3 +38,24 @@ body {
   padding: 6px;
   background-color: white;
 }
+
+ul#attributes {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul#attributes li {
+}
+
+ul#attributes input {
+  float: left;
+  display: block;
+}
+
+ul#attributes input[name=name] {
+  width: 40%;
+}
+
+ul#attributes input[name=value] {
+  width: 60%;
+}

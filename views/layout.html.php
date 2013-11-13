@@ -13,6 +13,8 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
     <script src="/concord/concord.js"></script>
     <script src="/concord/concordUtils.js"></script>
+    <script src="/riotjs/jquery.riot.min.js"></script>
+    
     <script>
     jQuery(function ($) {
       setTimeout(function () {
