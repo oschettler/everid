@@ -220,6 +220,11 @@ on('GET', '/update', function () {
         opml2yaml($account->navigation) 
       );
       
+      file_put_contents(
+        $dir . '_config.yml',
+        "name: {$notebook->name}
+");
+      
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
       foreach ($noteList->notes as $remoteNote) {
         $localNote = ORM::for_table('note')
