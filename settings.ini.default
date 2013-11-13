@@ -1,0 +1,7 @@
+; sites = /optional/path/to/sites/sites
+
+oauth.callback_url = %schema://%host/auth/callback
+oauth.consumer_key = CONSUMER_KEY
+oauth.consumer_secret = CONSUMER_SECRET
+
+evernote.sandbox = true

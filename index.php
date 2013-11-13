@@ -17,6 +17,26 @@ ORM::configure('sqlite:db/everid.sqlite');
 config('dispatch.views', './views');
 config('source', 'settings.ini');
 
+/**
+ * Build a hierarchical <ul> list from an OPML tree
+ */
+function navigation($tree, $lv = 0) {
+  $result = '<ul class="level-' . $lv . '">';
+  
+  foreach ($tree as $item) {
+    $result .= strtr('<li><a href="%link">%title</a></li>', array(
+      '%link' => $item->link,
+      '%title' => $item->title,
+    ));
+    if (!empty($item->_)) {
+      $result .= navigation($item->_, $lv + 1);
+    }
+  }
+  
+  $result .= '</ul>';
+  return $result;
+}
+ 
 on('GET', '/', function () {
   render('index', array(
     'site_name' => config('site.name'),

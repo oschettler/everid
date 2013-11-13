@@ -1,24 +1,25 @@
 <?php
 /**
- * Routes for prefix "/user"
+ * Transform OPML to YAML
  */
-function navigation($tree, $lv = 0) {
-  $result = '<ul class="level-' . $lv . '">';
-  
-  foreach ($tree as $item) {
-    $result .= strtr('<li><a href="%link">%title</a></li>', array(
-      '%link' => $item->link,
-      '%title' => $item->title,
-    ));
-    if (!empty($item->_)) {
-      $result .= navigation($item->_, $lv + 1);
+function opml2yaml($opml) {
+  $yaml = '';
+
+  $xml = simplexml_load_string($opml);
+  foreach ($xml->body->outline as $outline) {
+    $yaml .= "-\n";    
+
+    foreach ($outline->attributes() as $name => $value) {
+      $yaml .= "  {$name}: {$value}\n";
     }
   }
   
-  $result .= '</ul>';
-  return $result;
+  return $yaml;
 }
- 
+
+/**
+ * Routes for prefix "/user"
+ */
 before(function ($method, $path) {
   if (empty($_SESSION['accessToken'])) {
     return;
@@ -153,21 +154,33 @@ on('POST', '/nav-save', function () {
   echo json_encode('OK');
 });
 
+/**
+ * Update a site for the currently logged-in user
+ */
 on('GET', '/update', function () {
-  //$auth = config('site.auth');
-  
   if (empty($_SESSION['accessToken'])) {
+    flash('error', 'Not logged in');
     redirect('/');
   }
   
-  //header('Content-type: text/plain');
+  //var_dump(array('BEFORE' => $account)); exit;
   
   $auth = $_SESSION['accessToken'];
+    $account = ORM::for_table('account')
+    ->where_equal('token', $auth)
+    ->find_one();
+  
+  //header('Content-type: text/plain');
+  
+  $sites_dir = config('sites');
+  if (empty($sites_dir)) {
+    $sites_dir = dirname(__FILE__) . '/../sites';
+  }
   
   $client = new Evernote\Client(array('token' => $auth));
   $store = $client->getNoteStore();
   foreach ($store->listNotebooks() as $notebook) {
-    if ($notebook->name == config('site.notebook')) {
+    if ($notebook->guid == $account->notebook) {
       $filter = new EDAM\NoteStore\NoteFilter(array(
         'notebookGuid' => $notebook->guid,
       ));
@@ -177,7 +190,35 @@ on('GET', '/update', function () {
       $spec->includeUpdated = TRUE;
       $spec->includeDeleted = TRUE;
       
-      $dir = dirname(__FILE__) . '/../sites/' . $notebook->name . '/';
+      $dir = $sites_dir . '/' . $notebook->name . '/';
+      echo "Updating \"{$notebook->name}\" in \"{$dir}\"...\n";
+      @mkdir($dir, 0775, /*recursive*/TRUE);
+      if (!is_dir($dir)) {
+        die("Can't write to {$dir}");
+      }
+      
+      // Prepare Jekyll directory structure
+      foreach (array('_drafts', '_includes', '_layouts', '_posts', '_data', '_site') as $subdir) {
+        @mkdir($dir . $subdir, 0775);
+      }
+      
+      $theme = dirname(__FILE__) . '/themes/' . $account->theme . '/';
+      if (!is_dir($theme)) {
+        die("No such theme \"{$theme}\"\n");
+      }
+      
+      if (!copy($theme . 'layout.html', $dir . '_layouts/default.html')) {
+        die("Can't copy layout\n");
+      }
+      
+      if (!copy($theme . 'styles.css', $dir . 'styles.css')) {
+        die("Can't copy styles\n");
+      }
+
+      file_put_contents(
+        $dir . '_data/navigation.yml',
+        opml2yaml($account->navigation) 
+      );
       
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
       foreach ($noteList->notes as $remoteNote) {

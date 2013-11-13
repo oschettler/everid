@@ -1,7 +1,5 @@
 <div id="outliner-nav" class="btn-group">
   <button id="rendermode-status" type="button" title="Render mode" class="btn btn-default">R</button>
-  <button type="button" class="btn btn-default">2</button>
-
   <div class="btn-group">
     <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-chevron-down"></span></button>
     <ul class="dropdown-menu pull-right" role="menu">
