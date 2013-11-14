@@ -2,7 +2,7 @@
 ini_set('display_errors', TRUE);
 error_reporting(-1);
 
-session_set_cookie_params(86400);
+session_set_cookie_params(86400 * 7);
 session_start();
 
 require_once 'vendor/autoload.php';

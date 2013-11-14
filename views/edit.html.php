@@ -5,10 +5,6 @@
     <input type="text" class="form-control" name="name" id="name-field" placeholder="Enter name" value="<?php echo $name; ?>">
   </div>
   <div class="form-group">
-    <label for="title">Title</label>
-    <input type="text" class="form-control" name="title" id="title-field" placeholder="Enter title" value="<?php echo $name; ?>">
-  </div>
-  <div class="form-group">
     <label>Notebook</label>
     <select name="notebook" id="notebook-field" class="form-control">
       <?php

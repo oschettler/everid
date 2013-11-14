@@ -1,24 +1,47 @@
 <?php
 /**
- * Transform OPML to YAML
+ * Recursively transform OPML to YAML
  */
 function opml2yaml($opml, $level = 0) {
 
   $indent = str_repeat(' ', $level);
-  $yaml = '';
-  foreach ($opml as $outline) {
-    $yaml .= "{$indent}-\n";    
+  $yaml = "";
 
-    foreach ($outline->attributes() as $name => $value) {
-      $yaml .= "{$indent}  {$name}: {$value}\n";
+  $attr = array();
+  foreach ($opml->attributes() as $name => $value) {
+    $attr[$name] = $value;
+  }
+
+  $outline_name = NULL;
+  if (isset($attr['text'])) {
+    $outline_name = $attr['text'];
+    unset($attr['text']);
+  }
+
+  $outline_type = NULL;
+  if (isset($attr['type'])) {
+    $outline_type = $attr['type'];
+    unset($attr['type']);
+  }
+
+  if ($outline_type != 'list') {
+    foreach ($attr as $name => $value) {
+      $yaml .= "{$indent}{$name}: {$value}\n";
     }
+  }
 
-    if (count($outline->outline)) {
-      $yaml .= opml2yaml($outline->outline, 2);
+  foreach ($opml->outline as $child) {
+    list($child_name, $child_yaml) = opml2yaml($child, 2);
+
+    if ($outline_type == 'list') {
+      $yaml .= "{$indent}- text: {$child_name}\n{$child_yaml}";
+    }
+    else {
+      $yaml .= "{$indent}{$child_name}:\n{$child_yaml}";
     }
   }
   
-  return $yaml;
+  return array($outline_name, $yaml);
 }
 
 /**
@@ -51,7 +74,6 @@ before(function ($method, $path) {
     $_SESSION['account'] = (object)array(
       'username' => $account->username,
       'name' => $account->name,
-      'title' => $account->title,
       'notebook' => $account->notebook,
     );
   }
@@ -71,7 +93,7 @@ before(function ($method, $path) {
   // var_dump(array('BEFORE' => $account));
   
   $missingInfo = FALSE;
-  foreach (array('name', 'title', 'notebook') as $field) {
+  foreach (array('name', 'notebook') as $field) {
     if (empty($account->{$field})) {
       $missingInfo = TRUE;
     }
@@ -107,14 +129,12 @@ on('GET', '/edit', function () {
   }
 
   render('edit', array(
+    'site_name' => 'EverID',
+    'page_title' => 'Edit User',
     'name' => $account->name,
-    'title' => $account->title,
     'notebook' => $account->notebook,
     'notebooks' => $notebooks,
     'config' => json_encode($config),
-
-    'site_name' => config('site.name'),
-    'page_title' => config('site.title'),
   ));
 });
 
@@ -129,7 +149,7 @@ on('POST', '/edit', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
-  foreach (array('name', 'title', 'notebook') as $field) {
+  foreach (array('name', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
   $account->save();
@@ -172,7 +192,7 @@ on('GET', '/update', function () {
     ->where_equal('token', $auth)
     ->find_one();
   
-  //header('Content-type: text/plain');
+  header('Content-type: text/html; charset=UTF-8');
   
   $sites_dir = config('sites');
   if (empty($sites_dir)) {
@@ -193,7 +213,7 @@ on('GET', '/update', function () {
       $spec->includeDeleted = TRUE;
       
       $dir = $sites_dir . '/' . $notebook->name . '/';
-      echo "Updating \"{$notebook->name}\" in \"{$dir}\"...\n";
+      echo "Updating \"{$notebook->name}\" in \"{$dir}\"...<br>\n";
       @mkdir($dir, 0775, /*recursive*/TRUE);
       if (!is_dir($dir)) {
         die("Can't write to {$dir}");
@@ -228,6 +248,7 @@ on('GET', '/update', function () {
         else {
           $fname = $dir . '_data/' . preg_replace('/\W+/u', '_', $name) . '.yml';
         }
+        echo "Writing {$fname}<br>\n";
         file_put_contents($fname, $yaml);
       }
       
