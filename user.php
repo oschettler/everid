@@ -196,7 +196,7 @@ on('GET', '/update', function () {
   //var_dump(array('BEFORE' => $account)); exit;
   
   $auth = $_SESSION['accessToken'];
-    $account = ORM::for_table('account')
+  $account = ORM::for_table('account')
     ->where_equal('token', $auth)
     ->find_one();
   
@@ -220,12 +220,21 @@ on('GET', '/update', function () {
       $spec->includeUpdated = TRUE;
       $spec->includeDeleted = TRUE;
       
-      $dir = $sites_dir . '/' . $notebook->name . '/';
+      $dir = $sites_dir . '/' . $account->username . '/' . $notebook->name . '/';
       echo "Updating \"{$notebook->name}\" in \"{$dir}\"...<br>\n";
+
+      exec("rm -rf '{$dir}'");
       @mkdir($dir, 0775, /*recursive*/TRUE);
       if (!is_dir($dir)) {
         die("Can't write to {$dir}");
       }
+
+      if (!empty($account->ssh_private)) {
+        file_put_contents($dir . 'key', $account->ssh_private);
+        chmod($dir . 'key', 0600);
+        file_put_contents($dir . 'key.pub', $account->ssh_public);
+      }
+      exec("cd {$dir}; git init; git remote add origin '{$account->git_repo}'; ssh-agent bash -c 'ssh-add key; git fetch origin +gh-pages:gh-pages'; git checkout gh-pages");
       
       // Prepare Jekyll directory structure
       foreach (array('_drafts', '_includes', '_layouts', '_posts', '_data', '_site') as $subdir) {
@@ -240,13 +249,25 @@ on('GET', '/update', function () {
       if (!copy($theme . 'layout.html', $dir . '_layouts/default.html')) {
         die("Can't copy layout\n");
       }
+      else {
+        exec("cd {$dir}; git add _layouts/default.html"); 
+      }
       
       if (file_exists($theme . 'styles.css') 
         && !copy($theme . 'styles.css', $dir . 'styles.css')) {
 
         die("Can't copy styles\n");
       }
-
+      else {
+        exec("cd {$dir}; git add styles.css"); 
+      }
+      
+      if (!empty($account->domain)) {
+        echo "Will serve domain {$account->domain}<br>\n";
+        file_put_contents($dir . 'CNAME', $account->domain);
+        exec("cd {$dir}; git add CNAME"); 
+      }
+      
       $xml = simplexml_load_string($account->config);
       $config = array();
       foreach ($xml->body->outline as $outline) {
@@ -260,6 +281,7 @@ on('GET', '/update', function () {
         }
         echo "Writing {$fname}<br>\n";
         file_put_contents($fname, $yaml);
+        exec("cd {$dir}; git add {$fname}"); 
       }
       
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
@@ -316,6 +338,7 @@ tags: {$tags}
             */
           }
           file_put_contents($fname, $content);
+          exec("cd {$dir}; git add {$fname}"); 
           
           $now = time();
           if (!$localNote) {
@@ -332,9 +355,12 @@ tags: {$tags}
         else {
           echo "no change<br>\n";
         }
-      }
-    }
-  }
+      } // notes
+      
+      exec(strftime("cd {$dir}; git commit -a -m 'Update %Y-%d-%m %H:%M:%S'; git push origin"));
+      
+    } // matching notebook
+  } // all notebooks
   
 });
 
