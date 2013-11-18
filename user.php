@@ -117,6 +117,12 @@ on('GET', '/edit', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
+  $themes = array();
+  foreach (ORM::for_table('theme')
+    ->find_many() as $theme) {
+    $themes[$theme->name] = $theme->title;
+  }
+
   $notebooks = array();
   $client = new Evernote\Client(array('token' => $_SESSION['accessToken']));
   foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
@@ -134,6 +140,8 @@ on('GET', '/edit', function () {
     'name' => $account->name,
     'notebook' => $account->notebook,
     'notebooks' => $notebooks,
+    'theme' => $account->theme,
+    'themes' => $themes,
     'config' => json_encode($config),
   ));
 });
@@ -149,7 +157,7 @@ on('POST', '/edit', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
-  foreach (array('name', 'notebook') as $field) {
+  foreach (array('name', 'theme', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
   $account->save();
@@ -233,7 +241,9 @@ on('GET', '/update', function () {
         die("Can't copy layout\n");
       }
       
-      if (!copy($theme . 'styles.css', $dir . 'styles.css')) {
+      if (file_exists($theme . 'styles.css') 
+        && !copy($theme . 'styles.css', $dir . 'styles.css')) {
+
         die("Can't copy styles\n");
       }
 

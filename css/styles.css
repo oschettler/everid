@@ -50,12 +50,19 @@ ul#attributes li {
 ul#attributes input {
   float: left;
   display: block;
+  margin: 1%;
+}
+
+ul#attributes li:first-child input {
+  margin-top: 0;  
 }
 
 ul#attributes input[name=name] {
-  width: 40%;
+  margin-left: 0;
+  width: 39%;
 }
 
 ul#attributes input[name=value] {
-  width: 60%;
+  margin-right: 0;
+  width: 59%;
 }

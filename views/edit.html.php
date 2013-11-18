@@ -23,6 +23,25 @@
     </select>
   </div>
 
+  <div class="form-group">
+    <label>Theme</label>
+    <select name="theme" id="theme-field" class="form-control">
+      <?php
+      foreach ($themes as $name => $title):
+        if ($name == $theme) {
+          $selected = ' selected="selected"';
+        }
+        else {
+          $selected = '';
+        }
+        ?>
+        <option<?php echo $selected; ?> value="<?php echo $name; ?>"><?php echo $title; ?></option>
+        <?php
+      endforeach;
+      ?>
+    </select>
+  </div>
+
   <div class="row config">
     <div class="col-md-8 main">
       <?php echo partial('outliner-nav'); ?>
@@ -43,8 +62,8 @@
 
 <script id="attribute-line" type="html/template">
 <li>
-  <input name="name" placeholder="name">
-  <input name="value" placeholder="value">
+  <input class="form-control" name="name" placeholder="name">
+  <input class="form-control" name="value" placeholder="value">
 </li>
 </script>
 
