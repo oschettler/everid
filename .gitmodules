@@ -4,3 +4,6 @@
 [submodule "externals/riotjs"]
 	path = externals/riotjs
 	url = https://github.com/moot/riotjs.git
+[submodule "externals/bootswatch"]
+	path = externals/bootswatch
+	url = git@github.com:thomaspark/bootswatch.git
