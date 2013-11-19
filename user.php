@@ -188,17 +188,37 @@ on('POST', '/nav-save', function () {
  * Update a site for the currently logged-in user
  */
 on('GET', '/update', function () {
-  if (empty($_SESSION['accessToken'])) {
-    flash('error', 'Not logged in');
-    redirect('/');
+  if (!empty($_SERVER['argv'][1])) {
+    /*
+     * Called with a username. Get the token from the database
+     */
+    $u = $_SERVER['argv'][1];
+    echo "Updating fur user {$u}\n";
+    $account = ORM::for_table('account')
+      ->where_equal('username', $u)
+      ->find_one();
+    if (!$account) {
+      die("No such user {$account}\n");
+    }
+    $auth = $account->token;
   }
-  
-  //var_dump(array('BEFORE' => $account)); exit;
-  
-  $auth = $_SESSION['accessToken'];
-  $account = ORM::for_table('account')
-    ->where_equal('token', $auth)
-    ->find_one();
+  else {
+    /*
+     * Called with an authenticated session. Get the matching user from the database
+     */
+    if (empty($_SESSION['accessToken'])) {
+      flash('error', 'Not logged in');
+      redirect('/');
+    }
+    
+    //var_dump(array('BEFORE' => $account)); exit;
+    
+    $auth = $_SESSION['accessToken'];
+    $account = ORM::for_table('account')
+      ->where_equal('token', $auth)
+      ->find_one();
+  }
+
   
   header('Content-type: text/html; charset=UTF-8');
   
@@ -224,18 +244,42 @@ on('GET', '/update', function () {
       echo "Updating \"{$notebook->name}\" in \"{$dir}\"...<br>\n";
 
       exec("rm -rf '{$dir}'");
-      @mkdir($dir, 0775, /*recursive*/TRUE);
+      @mkdir($dir . '.ssh', 0775, /*recursive*/TRUE);
       if (!is_dir($dir)) {
         die("Can't write to {$dir}");
       }
 
       if (!empty($account->ssh_private)) {
-        file_put_contents($dir . 'key', $account->ssh_private);
-        chmod($dir . 'key', 0600);
-        file_put_contents($dir . 'key.pub', $account->ssh_public);
+        file_put_contents($dir . '.ssh/id_rsa', $account->ssh_private);
+        chmod($dir . '.ssh/id_rsa', 0600);
+        file_put_contents($dir . '.ssh/id_rsa.pub', $account->ssh_public);
       }
-      exec("cd {$dir}; git init; git remote add origin '{$account->git_repo}'; ssh-agent bash -c 'ssh-add key; git fetch origin +gh-pages:gh-pages'; git checkout gh-pages");
       
+      file_put_contents($dir . 'ssh.sh', "#!/bin/bash\nexport HOME='{$dir}'\nssh \"$@\"\n");
+      chmod("{$dir}ssh.sh", 0700);
+      //putenv("HOME='{$dir}'");
+      //putenv("GIT_SSH='{$dir}ssh.sh'");
+      
+      // XXX The following will fail if the remote repo does not yet contain a branch "gh-pages"
+      $out = array(); exec("cd '{$dir}'; git init; git remote add origin '{$account->git_repo}' 2>&1", $out, $status);
+      echo join('<br>', $out) . '<br>';
+      if (FALSE && $status) {
+        die("{$cmd} failed: " . join('<br>', $out) . "\n");
+      }
+      
+      $out = array(); exec("cd '{$dir}'; GIT_SSH='{$dir}ssh.sh' git fetch 2>&1", $out, $status);
+      echo `ls -la '{$dir}ssh.sh'`, "\n";
+      echo "FETCH: " . join('<br>', $out) . '<br>';
+      if (FALSE && $status) {
+        die("{$cmd} failed: " . join('<br>', $out) . "\n");
+      }
+
+      $out = array(); exec("cd '{$dir}'; git checkout gh-pages 2>&1", $out, $status);
+      echo "CHECKOUT: " . join('<br>', $out) . '<br>';
+      if (FALSE && $status) {
+        die("{$cmd} failed: " . join('<br>', $out) . "\n");
+      }
+
       // Prepare Jekyll directory structure
       foreach (array('_drafts', '_includes', '_layouts', '_posts', '_data', '_site') as $subdir) {
         @mkdir($dir . $subdir, 0775);
@@ -250,7 +294,11 @@ on('GET', '/update', function () {
         die("Can't copy layout\n");
       }
       else {
-        exec("cd {$dir}; git add _layouts/default.html"); 
+        $out = array(); exec("cd '{$dir}'; git add _layouts/default.html", $out, $status);
+        echo "LAYOUT: " . join('<br>', $out) . '<br>';
+        if (FALSE && $status) {
+          die("Command failed: " . join('<br>', $out) . "\n");
+        }
       }
       
       if (file_exists($theme . 'styles.css') 
@@ -259,13 +307,21 @@ on('GET', '/update', function () {
         die("Can't copy styles\n");
       }
       else {
-        exec("cd {$dir}; git add styles.css"); 
+        $out = array(); exec("cd '{$dir}'; git add styles.css", $out, $status);
+        echo "STYLES: " . join('<br>', $out) . '<br>';
+        if (FALSE && $status) {
+          die("Command failed: " . join('<br>', $out) . "\n");
+        }
       }
       
       if (!empty($account->domain)) {
         echo "Will serve domain {$account->domain}<br>\n";
         file_put_contents($dir . 'CNAME', $account->domain);
-        exec("cd {$dir}; git add CNAME"); 
+        $out = array(); exec("cd '{$dir}'; git add CNAME", $out, $status);
+        echo "CNAME: " . join('<br>', $out) . '<br>';
+        if (FALSE && $status) {
+          die("Command failed: " . join('<br>', $out) . "\n");
+        }
       }
       
       $xml = simplexml_load_string($account->config);
@@ -281,7 +337,11 @@ on('GET', '/update', function () {
         }
         echo "Writing {$fname}<br>\n";
         file_put_contents($fname, $yaml);
-        exec("cd {$dir}; git add {$fname}"); 
+        $out = array(); exec("cd '{$dir}'; git add {$fname}", $out, $status);
+        echo "ADD: " . join('<br>', $out) . '<br>';
+        if (FALSE && $status) {
+          die("Command failed: " . join('<br>', $out) . "\n");
+        }
       }
       
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
@@ -338,7 +398,11 @@ tags: {$tags}
             */
           }
           file_put_contents($fname, $content);
-          exec("cd {$dir}; git add {$fname}"); 
+          $out = array(); exec("cd '{$dir}'; git add {$fname}", $out, $status);
+          echo "ADD: " . join('<br>', $out) . '<br>';
+          if (FALSE && $status) {
+            die("Command failed: " . join('<br>', $out) . "\n");
+          }
           
           $now = time();
           if (!$localNote) {
@@ -357,8 +421,17 @@ tags: {$tags}
         }
       } // notes
       
-      exec(strftime("cd {$dir}; git commit -a -m 'Update %Y-%d-%m %H:%M:%S'; git push origin"));
-      
+      $out = array(); exec(strftime("cd '{$dir}'; git commit -a -m 'Update %Y-%d-%m %H:%M:%S' 2>&1"), $out, $status);
+      echo "COMMIT: " . join('<br>', $out) . '<br>';
+      if (FALSE && $status) {
+        die("Command failed: " . join('<br>', $out) . "\n");
+      }      
+
+      $out = array(); exec(strftime("cd '{$dir}'; GIT_SSH='{$dir}ssh.sh' git push origin 2>&1"), $out, $status);
+      echo "PUSH: " . join('<br>', $out) . '<br>';
+      if (FALSE && $status) {
+        die("Command failed: " . join('<br>', $out) . "\n");
+      }      
     } // matching notebook
   } // all notebooks
   
