@@ -48,13 +48,13 @@ function opml2yaml($opml, $level = 0) {
  * Routes for prefix "/user"
  */
 before(function ($method, $path) {
-  if (empty($_SESSION['accessToken'])) {
+  if (empty(session('accessToken'))) {
     return;
   }
   
   $accountInfo = array();
   
-  foreach (explode(':', $_SESSION['accessToken']) as $field) {
+  foreach (explode(':', session('accessToken')) as $field) {
     if (preg_match('/^(\w+)=(.*)$/', $field, $matches)) {
       $accountInfo[$matches[1]] = $matches[2];
     }
@@ -65,29 +65,29 @@ before(function ($method, $path) {
     ->find_one();
 
   if ($account) {
-    if ($account->token != $_SESSION['accessToken']) {
-      $account->token = $_SESSION['accessToken'];
+    if ($account->token != session('accessToken')) {
+      $account->token = session('accessToken');
       $account->updated = time();
       $account->save();
     }
   
-    $_SESSION['account'] = (object)array(
+    session('account', (object)array(
       'username' => $account->username,
       'name' => $account->name,
       'notebook' => $account->notebook,
-    );
+    ));
   }
   else {
     $account = ORM::for_table('account')->create();
     $account->username = $accountInfo['A'];
     $account->evernote_id = base_convert($accountInfo['U'], 16, 10);
-    $account->token = $_SESSION['accessToken'];
+    $account->token = session('accessToken');
     $account->created = $account->updated = time();
     $account->save();
 
-    $_SESSION['account'] = (object)array(
+    session('account', (object)array(
       'username' => $account->username,
-    );
+    ));
   }
   
   // var_dump(array('BEFORE' => $account));
@@ -106,7 +106,7 @@ before(function ($method, $path) {
 });
 
 on('GET', '/edit', function () {
-  if (empty($_SESSION['accessToken'])) {
+  if (empty(session('accessToken'))) {
     flash('error', 'Not logged in');
     redirect('/');
   }
@@ -114,7 +114,7 @@ on('GET', '/edit', function () {
   //var_dump(array('BEFORE' => $account)); exit;
   
   $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
+    ->where_equal('token', session('accessToken'))
     ->find_one();
 
   $themes = array();
@@ -124,7 +124,7 @@ on('GET', '/edit', function () {
   }
 
   $notebooks = array();
-  $client = new Evernote\Client(array('token' => $_SESSION['accessToken']));
+  $client = new Evernote\Client(array('token' => session('accessToken')));
   foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
     $notebooks[$notebook->guid] = $notebook->name; 
   }
@@ -148,13 +148,13 @@ on('GET', '/edit', function () {
 
 on('POST', '/edit', function () {
 
-  if (empty($_SESSION['accessToken'])) {
+  if (empty(session('accessToken'))) {
     flash('error', 'Not logged in');
     redirect('/');
   }
 
   $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
+    ->where_equal('token', session('accessToken'))
     ->find_one();
 
   foreach (array('name', 'theme', 'notebook') as $field) {
@@ -168,7 +168,7 @@ on('POST', '/edit', function () {
 
 on('POST', '/nav-open', function () {
   $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
+    ->where_equal('token', session('accessToken'))
     ->find_one();
   header('Content-type: text/xml; charset=UTF-8');
   echo $account->config;
@@ -176,7 +176,7 @@ on('POST', '/nav-open', function () {
 
 on('POST', '/nav-save', function () {
   $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
+    ->where_equal('token', session('accessToken'))
     ->find_one();
 
   $account->config = $_POST['opml'];
@@ -188,10 +188,15 @@ on('POST', '/nav-save', function () {
  * Update a site for the currently logged-in user
  */
 on('GET', '/update', function () {
+  require_once 'github.php';
+
   if (!empty($_SERVER['argv'][1])) {
     /*
-     * Called with a username. Get the token from the database
+     * Called with a username. Get the Evernote token from the database
      */
+    header('Content-type: text/plain; charset=UTF-8');
+    $lf = "\n";
+    
     $u = $_SERVER['argv'][1];
     echo "Updating fur user {$u}\n";
     $account = ORM::for_table('account')
@@ -201,26 +206,31 @@ on('GET', '/update', function () {
       die("No such user {$account}\n");
     }
     $auth = $account->token;
+
+    $gh_client = new Github\Client();
+    $repositories = $gh_client->api('user')->repositories($u);
+    var_dump($repositories); exit;
+
   }
   else {
     /*
      * Called with an authenticated session. Get the matching user from the database
      */
-    if (empty($_SESSION['accessToken'])) {
+    header('Content-type: text/html; charset=UTF-8');
+    $lf = "<br>\n";
+
+    if (empty(session('accessToken'))) {
       flash('error', 'Not logged in');
       redirect('/');
     }
     
     //var_dump(array('BEFORE' => $account)); exit;
     
-    $auth = $_SESSION['accessToken'];
+    $auth = session('accessToken');
     $account = ORM::for_table('account')
       ->where_equal('token', $auth)
       ->find_one();
   }
-
-  
-  header('Content-type: text/html; charset=UTF-8');
   
   $sites_dir = config('sites');
   if (empty($sites_dir)) {
@@ -274,7 +284,7 @@ on('GET', '/update', function () {
         die("{$cmd} failed: " . join('<br>', $out) . "\n");
       }
 
-      $out = array(); exec("cd '{$dir}'; git checkout gh-pages 2>&1", $out, $status);
+      $out = array(); exec("cd '{$dir}'; git checkout --orphan gh-pages 2>&1", $out, $status);
       echo "CHECKOUT: " . join('<br>', $out) . '<br>';
       if (FALSE && $status) {
         die("{$cmd} failed: " . join('<br>', $out) . "\n");

@@ -6,9 +6,9 @@
 on('GET', '/callback', function () {
 
   if (isset($_GET['oauth_verifier'])) {
-    $_SESSION['oauthVerifier'] = $_GET['oauth_verifier'];
+    session('oauthVerifier', $_GET['oauth_verifier']);
 
-    if (isset($_SESSION['accessToken'])) {
+    if (isset(session('accessToken'))) {
       flash('error', 'Temporary credentials may only be exchanged for token credentials once');
       error_log($m);
       redirect('/');
@@ -21,14 +21,14 @@ on('GET', '/callback', function () {
         'sandbox' => config('evernote.sandbox')
       ));
       $accessTokenInfo = $client->getAccessToken(
-        $_SESSION['requestToken'], 
-        $_SESSION['requestTokenSecret'], 
-        $_SESSION['oauthVerifier']
+        session('requestToken'), 
+        session('requestTokenSecret'), 
+        session('oauthVerifier')
       );
       if ($accessTokenInfo) {
-        $_SESSION['accessToken'] = $accessTokenInfo['oauth_token'];
+        session('accessToken', $accessTokenInfo['oauth_token']);
         
-        error_log("ACCESS TOKEN: " . $_SESSION['accessToken']);
+        error_log("ACCESS TOKEN: " . session('accessToken'));
         // The authenticated action
 
         flash('success', 'Welcome back');
@@ -65,10 +65,10 @@ on('GET', '/authorize', function () {
       ))
     );
     if ($requestTokenInfo) {
-      $_SESSION['requestToken'] = $requestTokenInfo['oauth_token'];
-      $_SESSION['requestTokenSecret'] = $requestTokenInfo['oauth_token_secret'];
+      session('requestToken', $requestTokenInfo['oauth_token']);
+      session('requestTokenSecret', $requestTokenInfo['oauth_token_secret']);
 
-      redirect($client->getAuthorizeUrl($_SESSION['requestToken']));
+      redirect($client->getAuthorizeUrl(session('requestToken')));
     } 
     else {
       flash('error', 'Failed to obtain temporary credentials.');
@@ -82,14 +82,14 @@ on('GET', '/authorize', function () {
 
 on('GET', '/logout', function () {
 
-  unset($_SESSION['account']);
+  unset(session('account'));
 
-  unset($_SESSION['requestToken']);
-  unset($_SESSION['requestTokenSecret']);
-  unset($_SESSION['oauthVerifier']);
-  unset($_SESSION['accessToken']);
-  unset($_SESSION['accessTokenSecret']);
-  unset($_SESSION['tokenExpires']);
+  unset(session('requestToken'));
+  unset(session('requestTokenSecret'));
+  unset(session('oauthVerifier'));
+  unset(session('accessToken'));
+  unset(session('accessTokenSecret'));
+  unset(session('tokenExpires'));
   
   flash('success', 'You are now logged out');
   redirect('/');

@@ -30,4 +30,6 @@ prefix('/user', function () {
 
 prefix('/auth', function () { include 'auth.php'; });
 
+prefix('/github', function () { include 'github.php'; });
+
 dispatch();
