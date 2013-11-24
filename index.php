@@ -5,6 +5,8 @@ error_reporting(-1);
 session_set_cookie_params(86400 * 7);
 session_start();
 
+require_once './github_api.php';
+
 require_once 'vendor/autoload.php';
 
 ini_set("include_path", ini_get("include_path") . ":vendor/evernote/evernote/lib");
@@ -24,9 +26,7 @@ on('GET', '/', function () {
   ));
 });
 
-prefix('/user', function () { 
-  include 'user.php'; 
-});
+prefix('/user', function () { include 'user.php'; });
 
 prefix('/auth', function () { include 'auth.php'; });
 

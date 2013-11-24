@@ -48,13 +48,13 @@ function opml2yaml($opml, $level = 0) {
  * Routes for prefix "/user"
  */
 before(function ($method, $path) {
-  if (empty(session('accessToken'))) {
+  if (empty($_SESSION['accessToken'])) {
     return;
   }
   
   $accountInfo = array();
   
-  foreach (explode(':', session('accessToken')) as $field) {
+  foreach (explode(':', $_SESSION['accessToken']) as $field) {
     if (preg_match('/^(\w+)=(.*)$/', $field, $matches)) {
       $accountInfo[$matches[1]] = $matches[2];
     }
@@ -65,29 +65,29 @@ before(function ($method, $path) {
     ->find_one();
 
   if ($account) {
-    if ($account->token != session('accessToken')) {
-      $account->token = session('accessToken');
+    if ($account->token != $_SESSION['accessToken']) {
+      $account->token = $_SESSION['accessToken'];
       $account->updated = time();
       $account->save();
     }
   
-    session('account', (object)array(
+    $_SESSION['account'] = (object)array(
       'username' => $account->username,
       'name' => $account->name,
       'notebook' => $account->notebook,
-    ));
+    );
   }
   else {
     $account = ORM::for_table('account')->create();
     $account->username = $accountInfo['A'];
     $account->evernote_id = base_convert($accountInfo['U'], 16, 10);
-    $account->token = session('accessToken');
+    $account->token = $_SESSION['accessToken'];
     $account->created = $account->updated = time();
     $account->save();
 
-    session('account', (object)array(
+    $_SESSION['account'] = (object)array(
       'username' => $account->username,
-    ));
+    );
   }
   
   // var_dump(array('BEFORE' => $account));
@@ -106,7 +106,7 @@ before(function ($method, $path) {
 });
 
 on('GET', '/edit', function () {
-  if (empty(session('accessToken'))) {
+  if (empty($_SESSION['accessToken'])) {
     flash('error', 'Not logged in');
     redirect('/');
   }
@@ -114,7 +114,7 @@ on('GET', '/edit', function () {
   //var_dump(array('BEFORE' => $account)); exit;
   
   $account = ORM::for_table('account')
-    ->where_equal('token', session('accessToken'))
+    ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
   $themes = array();
@@ -124,7 +124,7 @@ on('GET', '/edit', function () {
   }
 
   $notebooks = array();
-  $client = new Evernote\Client(array('token' => session('accessToken')));
+  $client = new Evernote\Client(array('token' => $_SESSION['accessToken']));
   foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
     $notebooks[$notebook->guid] = $notebook->name; 
   }
@@ -148,13 +148,13 @@ on('GET', '/edit', function () {
 
 on('POST', '/edit', function () {
 
-  if (empty(session('accessToken'))) {
+  if (empty($_SESSION['accessToken'])) {
     flash('error', 'Not logged in');
     redirect('/');
   }
 
   $account = ORM::for_table('account')
-    ->where_equal('token', session('accessToken'))
+    ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
   foreach (array('name', 'theme', 'notebook') as $field) {
@@ -168,7 +168,7 @@ on('POST', '/edit', function () {
 
 on('POST', '/nav-open', function () {
   $account = ORM::for_table('account')
-    ->where_equal('token', session('accessToken'))
+    ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
   header('Content-type: text/xml; charset=UTF-8');
   echo $account->config;
@@ -176,7 +176,7 @@ on('POST', '/nav-open', function () {
 
 on('POST', '/nav-save', function () {
   $account = ORM::for_table('account')
-    ->where_equal('token', session('accessToken'))
+    ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
   $account->config = $_POST['opml'];
@@ -202,15 +202,6 @@ on('GET', '/update', function () {
     $account = ORM::for_table('account')
       ->where_equal('username', $u)
       ->find_one();
-    if (!$account) {
-      die("No such user {$account}\n");
-    }
-    $auth = $account->token;
-
-    $gh_client = new Github\Client();
-    $repositories = $gh_client->api('user')->repositories($u);
-    var_dump($repositories); exit;
-
   }
   else {
     /*
@@ -219,24 +210,49 @@ on('GET', '/update', function () {
     header('Content-type: text/html; charset=UTF-8');
     $lf = "<br>\n";
 
-    if (empty(session('accessToken'))) {
+    if (empty($_SESSION['accessToken'])) {
       flash('error', 'Not logged in');
       redirect('/');
     }
     
     //var_dump(array('BEFORE' => $account)); exit;
     
-    $auth = session('accessToken');
+    $auth = $_SESSION['accessToken'];
     $account = ORM::for_table('account')
       ->where_equal('token', $auth)
       ->find_one();
   }
   
-  $sites_dir = config('sites');
-  if (empty($sites_dir)) {
-    $sites_dir = dirname(__FILE__) . '/../sites';
+  if (!$account) {
+    die("No such user {$account}\n");
+  }
+  $auth = $account->token;
+
+  $github = new Github(
+    $account->github_token,
+    $account->github_username,
+    $account->github_repo
+  );
+  
+  // Check for gh-pages branch
+  $master_sha = NULL;
+  $gh_pages_sha = NULL;
+  
+  foreach ($github->branches() as $branch) {
+    if ($branch->name == 'gh-pages') {
+      $gh_pages_sha = $branch->commit->sha;
+    }
+    if ($branch->name == 'master') {
+      $master_sha = $branch->commit->sha;
+    }
   }
   
+  if (!$gh_pages_sha) {
+    echo "Creating branch \"gh-pages\"{$lf}";
+    $branch = $github->createBranch('gh-pages', $master_sha);
+    $gh_pages_sha = $branch->object->sha;
+  }
+    
   $client = new Evernote\Client(array('token' => $auth));
   $store = $client->getNoteStore();
   foreach ($store->listNotebooks() as $notebook) {
@@ -250,50 +266,34 @@ on('GET', '/update', function () {
       $spec->includeUpdated = TRUE;
       $spec->includeDeleted = TRUE;
       
-      $dir = $sites_dir . '/' . $account->username . '/' . $notebook->name . '/';
-      echo "Updating \"{$notebook->name}\" in \"{$dir}\"...<br>\n";
-
-      exec("rm -rf '{$dir}'");
-      @mkdir($dir . '.ssh', 0775, /*recursive*/TRUE);
-      if (!is_dir($dir)) {
-        die("Can't write to {$dir}");
-      }
-
-      if (!empty($account->ssh_private)) {
-        file_put_contents($dir . '.ssh/id_rsa', $account->ssh_private);
-        chmod($dir . '.ssh/id_rsa', 0600);
-        file_put_contents($dir . '.ssh/id_rsa.pub', $account->ssh_public);
+      echo "Updating \"{$notebook->name}\"...{$lf}";
+      
+      $tree = $github->trees();
+  
+      // Check for all directories in standard Jekyll directory structure
+      $dirs = array(
+        '_drafts' => NULL, 
+        '_includes' => NULL, 
+        '_layouts' => NULL, 
+        '_posts' => NULL, 
+        '_data' => NULL, 
+        '_site' => NULL,
+      );
+      
+      foreach ($tree->tree as $item) {
+        if ($item->type == 'tree' && array_key_exists($item->path, $dirs)) {
+          $dirs[$item->path] = $item->sha;
+        }
       }
       
-      file_put_contents($dir . 'ssh.sh', "#!/bin/bash\nexport HOME='{$dir}'\nssh \"$@\"\n");
-      chmod("{$dir}ssh.sh", 0700);
-      //putenv("HOME='{$dir}'");
-      //putenv("GIT_SSH='{$dir}ssh.sh'");
-      
-      // XXX The following will fail if the remote repo does not yet contain a branch "gh-pages"
-      $out = array(); exec("cd '{$dir}'; git init; git remote add origin '{$account->git_repo}' 2>&1", $out, $status);
-      echo join('<br>', $out) . '<br>';
-      if (FALSE && $status) {
-        die("{$cmd} failed: " . join('<br>', $out) . "\n");
+      foreach ($dirs as $dir => $sha) {
+        if ($sha === NULL) {
+          echo "Creating {$dir}{$lf}";
+          var_dump($github->mkdir($dir, $gh_pages_sha));
+        }  
       }
       
-      $out = array(); exec("cd '{$dir}'; GIT_SSH='{$dir}ssh.sh' git fetch 2>&1", $out, $status);
-      echo `ls -la '{$dir}ssh.sh'`, "\n";
-      echo "FETCH: " . join('<br>', $out) . '<br>';
-      if (FALSE && $status) {
-        die("{$cmd} failed: " . join('<br>', $out) . "\n");
-      }
-
-      $out = array(); exec("cd '{$dir}'; git checkout --orphan gh-pages 2>&1", $out, $status);
-      echo "CHECKOUT: " . join('<br>', $out) . '<br>';
-      if (FALSE && $status) {
-        die("{$cmd} failed: " . join('<br>', $out) . "\n");
-      }
-
-      // Prepare Jekyll directory structure
-      foreach (array('_drafts', '_includes', '_layouts', '_posts', '_data', '_site') as $subdir) {
-        @mkdir($dir . $subdir, 0775);
-      }
+      exit;
       
       $theme = dirname(__FILE__) . '/themes/' . $account->theme . '/';
       if (!is_dir($theme)) {
