@@ -44,6 +44,20 @@ function opml2yaml($opml, $level = 0) {
   return array($outline_name, $yaml);
 }
 
+function file_sha($fname, $sha = NULL) {
+  static $files;
+  
+  if ($sha) {
+    $files[$fname] = $sha;
+  }
+  if (empty($files[$fname])) {
+    return NULL;
+  }
+  else {
+    return $files[$fname];
+  }
+}
+
 /**
  * Routes for prefix "/user"
  */
@@ -233,7 +247,7 @@ on('GET', '/update', function () {
     $account->github_username,
     $account->github_repo
   );
-  
+    
   // Check for gh-pages branch
   $master_sha = NULL;
   $gh_pages_sha = NULL;
@@ -278,60 +292,56 @@ on('GET', '/update', function () {
         '_posts' => NULL, 
         '_data' => NULL, 
         '_site' => NULL,
-      );
-      
+      );     
+
       foreach ($tree->tree as $item) {
-        if ($item->type == 'tree' && array_key_exists($item->path, $dirs)) {
-          $dirs[$item->path] = $item->sha;
+        if ($item->type == 'tree') {
+          if (array_key_exists($item->path, $dirs)) {
+            $dirs[$item->path] = $item->sha;
+          } 
+        }
+        else
+        if ($item->type == 'blob') {
+          file_sha($item->path, $item->sha);
         }
       }
       
       foreach ($dirs as $dir => $sha) {
         if ($sha === NULL) {
           echo "Creating {$dir}{$lf}";
-          var_dump($github->mkdir($dir, $gh_pages_sha));
+          $github->mkdir($dir);
         }  
       }
-      
-      exit;
       
       $theme = dirname(__FILE__) . '/themes/' . $account->theme . '/';
       if (!is_dir($theme)) {
         die("No such theme \"{$theme}\"\n");
       }
       
-      if (!copy($theme . 'layout.html', $dir . '_layouts/default.html')) {
-        die("Can't copy layout\n");
+      if (!file_exists($theme . 'layout.html')) {
+        die("No layout {$theme}layout.html");
       }
-      else {
-        $out = array(); exec("cd '{$dir}'; git add _layouts/default.html", $out, $status);
-        echo "LAYOUT: " . join('<br>', $out) . '<br>';
-        if (FALSE && $status) {
-          die("Command failed: " . join('<br>', $out) . "\n");
-        }
-      }
-      
-      if (file_exists($theme . 'styles.css') 
-        && !copy($theme . 'styles.css', $dir . 'styles.css')) {
+      $github->save(
+        '_layouts/default.html',
+        file_get_contents($theme . 'layout.html'),
+        file_sha('_layouts/default.html')
+      );
 
-        die("Can't copy styles\n");
+      if (file_exists($theme . 'styles.css')) { 
+        $github->save(
+          '_layouts/default.html',
+          file_get_contents($theme . 'styles.css'),
+          file_sha('_layouts/default.html')
+        );
       }
-      else {
-        $out = array(); exec("cd '{$dir}'; git add styles.css", $out, $status);
-        echo "STYLES: " . join('<br>', $out) . '<br>';
-        if (FALSE && $status) {
-          die("Command failed: " . join('<br>', $out) . "\n");
-        }
-      }
-      
+            
       if (!empty($account->domain)) {
-        echo "Will serve domain {$account->domain}<br>\n";
-        file_put_contents($dir . 'CNAME', $account->domain);
-        $out = array(); exec("cd '{$dir}'; git add CNAME", $out, $status);
-        echo "CNAME: " . join('<br>', $out) . '<br>';
-        if (FALSE && $status) {
-          die("Command failed: " . join('<br>', $out) . "\n");
-        }
+        echo "Will serve domain {$account->domain}{$lf}";
+        $github->save(
+          'CNAME',
+          $account->domain,
+          file_sha('CNAME')
+        );
       }
       
       $xml = simplexml_load_string($account->config);
@@ -340,18 +350,13 @@ on('GET', '/update', function () {
         list($name, $yaml) = opml2yaml($outline);
 
         if ($name == '_config') {
-          $fname = $dir . '_config.yml';           
+          $fname = '_config.yml';           
         }
         else {
-          $fname = $dir . '_data/' . preg_replace('/\W+/u', '_', $name) . '.yml';
+          $fname = '_data/' . preg_replace('/\W+/u', '_', $name) . '.yml';
         }
-        echo "Writing {$fname}<br>\n";
-        file_put_contents($fname, $yaml);
-        $out = array(); exec("cd '{$dir}'; git add {$fname}", $out, $status);
-        echo "ADD: " . join('<br>', $out) . '<br>';
-        if (FALSE && $status) {
-          die("Command failed: " . join('<br>', $out) . "\n");
-        }
+        echo "Writing {$fname}{$lf}";
+        $github->save($fname, $yaml, file_sha($fname));
       }
       
       $noteList = $store->findNotesMetadata($auth, $filter, 0, 10, $spec);
@@ -364,10 +369,10 @@ on('GET', '/update', function () {
         if (TRUE || !$localNote || $localNote->updated < $remoteNote->updated / 1000) {
           if ($localNote) {
             $diff = $remoteNote->updated / 1000 - $localNote->updated; 
-            echo "updated: {$diff}<br>\n";
+            echo "updated: {$diff}{$lf}";
           }
           else {
-            echo "new<br>\n";
+            echo "new{$lf}";
           }
           
           $note = $store->getNote($auth, $remoteNote->guid,
@@ -384,8 +389,7 @@ on('GET', '/update', function () {
           $note->tagNames = $store->getNoteTagNames($auth, $remoteNote->guid);
           $tags = join(' ', $note->tagNames);
           
-          $fname = $dir . $note->attributes->sourceURL . '.html';
-          @mkdir(dirname($fname), 0775, /*recursive*/TRUE);
+          $fname = $note->attributes->sourceURL . '.html';
           
           $content = "---
 title: {$note->title}
@@ -407,13 +411,9 @@ tags: {$tags}
             }
             */
           }
-          file_put_contents($fname, $content);
-          $out = array(); exec("cd '{$dir}'; git add {$fname}", $out, $status);
-          echo "ADD: " . join('<br>', $out) . '<br>';
-          if (FALSE && $status) {
-            die("Command failed: " . join('<br>', $out) . "\n");
-          }
-          
+
+          $github->save($fname, $content, file_sha($fname));
+
           $now = time();
           if (!$localNote) {
             $localNote = ORM::for_table('note')->create();
@@ -427,21 +427,9 @@ tags: {$tags}
           $localNote->save();
         }
         else {
-          echo "no change<br>\n";
+          echo "no change{$lf}";
         }
       } // notes
-      
-      $out = array(); exec(strftime("cd '{$dir}'; git commit -a -m 'Update %Y-%d-%m %H:%M:%S' 2>&1"), $out, $status);
-      echo "COMMIT: " . join('<br>', $out) . '<br>';
-      if (FALSE && $status) {
-        die("Command failed: " . join('<br>', $out) . "\n");
-      }      
-
-      $out = array(); exec(strftime("cd '{$dir}'; GIT_SSH='{$dir}ssh.sh' git push origin 2>&1"), $out, $status);
-      echo "PUSH: " . join('<br>', $out) . '<br>';
-      if (FALSE && $status) {
-        die("Command failed: " . join('<br>', $out) . "\n");
-      }      
     } // matching notebook
   } // all notebooks
   

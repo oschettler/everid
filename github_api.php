@@ -1,6 +1,7 @@
 <?php
 
-function github_api($url, $post=FALSE, $headers=array()) {
+/* not working for PUT: Protocol PUT https not supported or disabled in libcurl */
+function _github_api($url, $post=FALSE, $headers=array()) {
   $ch = curl_init($url);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
  
@@ -31,6 +32,50 @@ function github_api($url, $post=FALSE, $headers=array()) {
   return json_decode($response);
 }
 
+function github_api($url, $post=FALSE, $headers=array()) {
+  $context_opt = array();
+
+  if (strpos($url, ' ') !== FALSE) {
+    list($verb, $url) = explode(' ', $url);
+  }
+  else {
+    $verb = 'GET';
+  }
+ 
+  //$scheme = parse_url($url, PHP_URL_SCHEME);
+  $scheme = 'http';
+  $context_opt = array($scheme => array()); 
+
+  if ($post) {
+    $context_opt[$scheme] = array(
+      'method' => 'POST',
+      'content' => json_encode($post),
+    );
+    $headers[] = 'Content-Type: application/json';
+  }
+  
+  if ($verb != 'GET') {
+    $context_opt[$scheme]['method'] = $verb;
+  }
+
+  $headers[] = 'Accept: application/json';
+  $headers[] = 'User-Agent: ' . config('github.app_name');
+ 
+  if(!empty($_SESSION['access_token'])) {
+    $headers[] = 'Authorization: Bearer ' . $_SESSION['access_token'];
+  }
+ 
+  $context_opt[$scheme] += array(
+    'header' => join('', array_map(function ($h) {
+      return "$h\r\n";
+    }, $headers))
+  );
+ 
+  $context = stream_context_create($context_opt);
+  return json_decode(file_get_contents($url, /*include_path*/FALSE, $context));
+}
+
+
 class Github {
 
   function __construct($token, $username, $repo) {
@@ -40,54 +85,30 @@ class Github {
     $this->url_base = config('github.api_url_base');
   }
   
-  function mkdir($path, $parent) {
+  function mkdir($path) {
+    return $this->save($path . '/empty', '-- empty file --');
+  }
   
+  function save($path, $content, $sha = NULL) {
     // Create _posts, following 
     // http://mdswanson.com/blog/2011/07/23/digging-around-the-github-api-take-2.html
 
-    $info = github_api(
-      'PUT ' . $this->url_base . "repos/{$this->username}/{$this->repo}/contents/{$path}/empty",
-      /*post*/array(
-        'path' => "{$path}/empty",
-        'message' => "mkdir {$path}",
-        'content' => '',
-        'branch' => 'gh-pages',        
-      ),
-      array('Authorization: Bearer ' . $this->token)
+    $params = array(
+      'path' => "{$path}",
+      'message' => "save {$path}",
+      'content' => base64_encode($content),
+      'branch' => 'gh-pages',        
     );
     
-    var_dump($info); exit;
-    
-    $branch_sha = $info->object->sha;
-    
+    if ($sha) {
+      $params['sha'] = $sha;
+    }
+
     $info = github_api(
-      $this->url_base . "repos/{$this->username}/{$this->repo}/git/commits/{$info->object->sha}",
-      /*post*/FALSE,
+      'PUT ' . $this->url_base . "repos/{$this->username}/{$this->repo}/contents/{$path}",
+      $params,
       array('Authorization: Bearer ' . $this->token)
     );
-  
-    $info = github_api(
-      $this->url_base . "repos/{$this->username}/{$this->repo}/git/trees",
-      /*post*/array(
-        'base_tree' => $info->tree->sha,
-        'tree' => array(
-          'path' => $path . '/empty',
-          'mode' => '100644',
-          'type' => 'tree',
-          'sha' => $branch_sha,
-          'content' => '',
-        )
-      ),
-      array('Authorization: Bearer ' . $this->token)
-    );
-    
-    var_dump($info);
-    exit;
-    
-  }
-  
-  function save($path) {
-    
   }
   
   function branches() {

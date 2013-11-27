@@ -36,17 +36,22 @@ on('GET', '/callback', function () {
    
     // Verify the state matches our stored state
     if (!params('state') || $_SESSION['github_state'] != params('state')) {
+      error_log("State mismatch: {$_SESSION['github_state'] } != " . params('state'));
       redirect($callback_url);
     }
    
     // Exchange the auth code for a token
-    $token = github_api(config('github.token_url'), array(
+    $token = github_api(config('github.token_url'), /*POST*/ array(
       'client_id' => config('github.oauth_client_id'),
       'client_secret' => config('github.oauth_client_secret'),
       'redirect_uri' => $callback_url,
       'state' => $_SESSION['github_state'],
       'code' => params('code')
     ));
+    if (!$token) {
+      error_log("No token");
+      redirect($callback_url);
+    }
     $_SESSION['github_access_token'] = $token->access_token;
     redirect($callback_url);
   }
@@ -66,6 +71,11 @@ on('GET', '/callback', function () {
 
     flash("You have connected to your Github account");
     redirect('/');
+  }
+  
+  if (!empty($_GET['error'])) {
+    flash('Error: ' . $_GET['error']);
+    //redirect('/');
   }
 
 });
