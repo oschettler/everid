@@ -1,38 +1,13 @@
 <?php
 
-/* not working for PUT: Protocol PUT https not supported or disabled in libcurl */
-function _github_api($url, $post=FALSE, $headers=array()) {
-  $ch = curl_init($url);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
- 
-  if ($post) {
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post));
-  }
-  
-  if (strpos($url, ' ') !== FALSE) {
-    list($verb, $url) = explode(' ', $url);
-    if ($verb == 'PUT') {
-      curl_setopt($ch, CURLOPT_PUT, TRUE);
-      file_put_contents('curl.json', json_encode($post));
-      curl_setopt($ch, CURLOPT_INFILE, fopen('curl.json', 'r'));  
-    }
-  }
- 
-  $headers[] = 'Accept: application/json';
-  $headers[] = 'User-Agent: ' . config('github.app_name');
- 
-  if(!empty($_SESSION['access_token'])) {
-    $headers[] = 'Authorization: Bearer ' . $_SESSION['access_token'];
-  }
- 
-  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-  curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
- 
-  $response = curl_exec($ch);
-  return json_decode($response);
-}
-
-function github_api($url, $post=FALSE, $headers=array()) {
+/**
+ * Call REST API, using file_get_contents 
+ * and a stream_context for POST data or additional headers.
+ *
+ * Does not use CURL as libcurl has disabled https for PUT
+ * in many installations.
+ */
+function api($url, $post=FALSE, $headers=array()) {
   $context_opt = array();
 
   if (strpos($url, ' ') !== FALSE) {
@@ -43,7 +18,7 @@ function github_api($url, $post=FALSE, $headers=array()) {
   }
  
   //$scheme = parse_url($url, PHP_URL_SCHEME);
-  $scheme = 'http';
+  $scheme = 'http'; // This needs to be "http" even for "https"
   $context_opt = array($scheme => array()); 
 
   if ($post) {
@@ -104,7 +79,7 @@ class Github {
       $params['sha'] = $sha;
     }
 
-    $info = github_api(
+    $info = api(
       'PUT ' . $this->url_base . "repos/{$this->username}/{$this->repo}/contents/{$path}",
       $params,
       array('Authorization: Bearer ' . $this->token)
@@ -112,7 +87,7 @@ class Github {
   }
   
   function branches() {
-    return github_api(
+    return api(
       $this->url_base . "repos/{$this->username}/{$this->repo}/branches",
       /*post*/FALSE,
       array('Authorization: Bearer ' . $this->token)
@@ -120,7 +95,7 @@ class Github {
   }
   
   function createBranch($branch, $branch_from_sha) {
-    return github_api(
+    return api(
       $this->url_base . "repos/{$this->username}/{$this->repo}/git/refs",
       /*post*/array(
         'ref' => 'refs/head/' . $branch,
@@ -131,7 +106,7 @@ class Github {
   }
   
   function trees() {
-    return github_api(
+    return api(
       $this->url_base . "repos/{$this->username}/{$this->repo}/git/trees/gh-pages?recursive=1",
       /*post*/FALSE,
       array('Authorization: Bearer ' . $this->token)
