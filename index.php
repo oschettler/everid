@@ -32,4 +32,6 @@ prefix('/auth', function () { include 'auth.php'; });
 
 prefix('/github', function () { include 'github.php'; });
 
+prefix('/contact', function () { include 'contact.php'; });
+
 dispatch();

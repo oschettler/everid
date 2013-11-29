@@ -1,7 +1,12 @@
 <div class="jumbotron">
   <h1><?php echo $page_title; ?></h1>
-  <p>This example is a quick exercise to illustrate how the default, static and fixed to top navbar work. It includes the responsive CSS and HTML, so it also adapts to your viewport and device.</p>
-  <p>To see the difference between static and fixed top navbars, just scroll.</p>
+  <p>Publish an Evernote notebook on the web.</p>
+  <ol>
+    <li>Select individual notes</li>
+    <li>Define your page navigation</li>
+    <li>Choose a theme</li>
+    <li>Go!</li>
+  </ol>
 
   <?php
   if (empty($_SESSION['account'])):

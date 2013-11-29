@@ -174,6 +174,8 @@ on('POST', '/edit', function () {
   foreach (array('name', 'theme', 'notebook') as $field) {
     $account->{$field} = $_POST[$field];
   }
+  ob_start(); var_dump($account);
+  error_log(ob_get_clean(), 3, "/tmp/everid.log");
   $account->save();
   flash('success', 'Account has been saved');
   //redirect('/user/edit');
@@ -313,6 +315,7 @@ on('GET', '/update', function () {
         }  
       }
       
+      echo "Theme \"{$account->theme}\"{$lf}";
       $theme = dirname(__FILE__) . '/themes/' . $account->theme . '/';
       if (!is_dir($theme)) {
         die("No such theme \"{$theme}\"\n");
@@ -328,10 +331,11 @@ on('GET', '/update', function () {
       );
 
       if (file_exists($theme . 'styles.css')) { 
+        echo "Styles{$lf}";
         $github->save(
-          '_layouts/default.html',
+          'styles.css',
           file_get_contents($theme . 'styles.css'),
-          file_sha('_layouts/default.html')
+          file_sha('styles.css')
         );
       }
             
