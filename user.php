@@ -62,6 +62,10 @@ function file_sha($fname, $sha = NULL) {
  * Routes for prefix "/user"
  */
 before(function ($method, $path) {
+  if (in_array($path, array('auth/logout', 'user/nav-open', 'user/nav-save'))) {
+    return;
+  }
+
   if (empty($_SESSION['accessToken'])) {
     return;
   }
@@ -74,12 +78,31 @@ before(function ($method, $path) {
     }
   }
   
+  error_log(json_encode($accountInfo) . "\n", 3, '/tmp/everid.log');
+  
+  $user = NULL;
+  $client = new Evernote\Client(array(
+    'token' => $_SESSION['accessToken'],
+    'sandbox' => config('evernote.sandbox'),
+  ));
+  
+  try {
+    $user = $client->getUserStore()->getUser();
+    error_log("USER: " . json_encode($user) . "\n", 3, '/tmp/everid.log');
+  }
+  catch (Exception $e) {
+    die("NO USER: " . json_encode($e));
+  }
+      
   $account = ORM::for_table('account')
-    ->where_equal('username', $accountInfo['A'])
+    ->where_equal('username', $user->username)
     ->find_one();
 
   if ($account) {
+  
+    error_log("FOUND user {$user->username}\n", 3, '/tmp/everid.log');
     if ($account->token != $_SESSION['accessToken']) {
+      error_log("New token {$_SESSION['accessToken']}. Previous: {$account->token}\n", 3, '/tmp/everid.log');
       $account->token = $_SESSION['accessToken'];
       $account->updated = time();
       $account->save();
@@ -87,17 +110,20 @@ before(function ($method, $path) {
   
     $_SESSION['account'] = (object)array(
       'username' => $account->username,
+      'evernote_id' => $account->evernote_id,
       'name' => $account->name,
       'notebook' => $account->notebook,
     );
   }
   else {
     $account = ORM::for_table('account')->create();
-    $account->username = $accountInfo['A'];
-    $account->evernote_id = base_convert($accountInfo['U'], 16, 10);
+    $account->username = $user->username;
+    $account->evernote_id = $evernote_id = base_convert($accountInfo['U'], 16, 10);
     $account->token = $_SESSION['accessToken'];
     $account->created = $account->updated = time();
     $account->save();
+
+    error_log("NEW user username={$user->username}, evernote_id={$evernote_id}\n", 3, '/tmp/everid.log');
 
     $_SESSION['account'] = (object)array(
       'username' => $account->username,
@@ -113,7 +139,8 @@ before(function ($method, $path) {
     }
   }
   
-  if ($path != '/user/edit' && $missingInfo) {
+  if ($path != 'user/edit' && $missingInfo) {
+    error_log("PATH {$path}\n", 3, '/tmp/everid.log');
     flash('success', 'Welcome. We need some minimal configuration');
     redirect('/user/edit');
   }
@@ -138,9 +165,22 @@ on('GET', '/edit', function () {
   }
 
   $notebooks = array();
-  $client = new Evernote\Client(array('token' => $_SESSION['accessToken']));
-  foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
-    $notebooks[$notebook->guid] = $notebook->name; 
+  $client = new Evernote\Client(array(
+    'token' => $_SESSION['accessToken'],
+    'sandbox' => config('evernote.sandbox'),
+  ));
+  
+  try {
+    foreach ($client->getNoteStore()->listNotebooks() as $notebook) {
+      $notebooks[$notebook->guid] = $notebook->name; 
+    }
+  }
+  catch (Exception $e) {
+    $notebooks['error'] = "Could not retrieve notebooks";
+    error_log(json_encode($e) . "\n", 3, '/tmp/everid.log');
+    ob_start();
+    debug_print_backtrace();
+    error_log(ob_get_clean() . "\n", 3, '/tmp/everid.log');
   }
   
   $config = $account->config;
@@ -214,7 +254,7 @@ on('GET', '/update', function () {
     $lf = "\n";
     
     $u = $_SERVER['argv'][1];
-    echo "Updating fur user {$u}\n";
+    echo "Updating for user {$u}\n";
     $account = ORM::for_table('account')
       ->where_equal('username', $u)
       ->find_one();
@@ -269,7 +309,10 @@ on('GET', '/update', function () {
     $gh_pages_sha = $branch->object->sha;
   }
     
-  $client = new Evernote\Client(array('token' => $auth));
+  $client = new Evernote\Client(array(
+    'token' => $auth,
+    'sandbox' => config('evernote.sandbox'),
+  ));
   $store = $client->getNoteStore();
   foreach ($store->listNotebooks() as $notebook) {
     if ($notebook->guid == $account->notebook) {
@@ -371,6 +414,38 @@ on('GET', '/update', function () {
         
         echo "{$remoteNote->title} ... ";
         if (TRUE || !$localNote || $localNote->updated < $remoteNote->updated / 1000) {
+          $note = $store->getNote($auth, $remoteNote->guid,
+            TRUE, // withContent
+            FALSE, // withResourcesData
+            FALSE, // withResourcesRecognition
+            FALSE // withResourcesAlternateData
+          );
+
+          $note->tagNames = $store->getNoteTagNames($auth, $remoteNote->guid);
+          
+          $url = NULL;
+          if (!empty($note->attributes->sourceURL)) {
+            $url = $note->attributes->sourceURL;
+          }
+          else
+          foreach ($note->tagNames as $tag) {
+            if (preg_match('/^url:(\S+)/i', $tag, $matches)) {
+              $url = $matches[1];
+            }
+          }
+          if (!$url) {
+            die("You need to set the URL on note {$note->title}");
+          }
+                  
+          if (preg_match('/\.(html|md)$/', $url, $matches)) {
+            $fname = $url; 
+          }               
+          else {
+            $fname = $url . '.html';
+          }   
+          
+          echo "({$fname}) ";
+                    
           if ($localNote) {
             $diff = $remoteNote->updated / 1000 - $localNote->updated; 
             echo "updated: {$diff}{$lf}";
@@ -379,21 +454,7 @@ on('GET', '/update', function () {
             echo "new{$lf}";
           }
           
-          $note = $store->getNote($auth, $remoteNote->guid,
-            TRUE, // withContent
-            FALSE, // withResourcesData
-            FALSE, // withResourcesRecognition
-            FALSE // withResourcesAlternateData
-          );
-
-          if (empty($note->attributes->sourceURL)) {
-            die("You need to set the URL on note {$note->title}");
-          }
-          
-          $note->tagNames = $store->getNoteTagNames($auth, $remoteNote->guid);
           $tags = join(' ', $note->tagNames);
-          
-          $fname = $note->attributes->sourceURL . '.html';
           
           $content = "---
 title: {$note->title}

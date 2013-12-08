@@ -10,7 +10,6 @@ on('GET', '/callback', function () {
 
     if (isset($_SESSION['accessToken'])) {
       flash('error', 'Temporary credentials may only be exchanged for token credentials once');
-      error_log($m);
       redirect('/');
     }
 
@@ -20,6 +19,7 @@ on('GET', '/callback', function () {
         'consumerSecret' => config('evernote.oauth_consumer_secret'),
         'sandbox' => config('evernote.sandbox')
       ));
+      
       $accessTokenInfo = $client->getAccessToken(
         $_SESSION['requestToken'], 
         $_SESSION['requestTokenSecret'], 
@@ -28,11 +28,10 @@ on('GET', '/callback', function () {
       if ($accessTokenInfo) {
         $_SESSION['accessToken'] = $accessTokenInfo['oauth_token'];
         
-        error_log("ACCESS TOKEN: " . $_SESSION['accessToken']);
         // The authenticated action
 
-        flash('success', 'Welcome back');
-        redirect('/user/update');
+        flash('success', 'Welcome back. Go to /user/update once you have your site configured');
+        redirect('/user/edit');
       } 
       else {
         flash('error', 'Failed to obtain token credentials.');
