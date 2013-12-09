@@ -214,10 +214,10 @@ on('POST', '/edit', function () {
     ->find_one();
 
   foreach (array('name', 'theme', 'notebook', 'github_username', 'github_repo') as $field) {
-    $account->{$field} = $_POST[$field];
+    if (!empty($_POST[$field])) {
+      $account->{$field} = $_POST[$field];
+    }
   }
-  ob_start(); var_dump($account);
-  error_log(ob_get_clean(), 3, "/tmp/everid.log");
   $account->save();
   flash('success', 'Account has been saved');
   //redirect('/user/edit');
