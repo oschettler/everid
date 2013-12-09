@@ -196,6 +196,8 @@ on('GET', '/edit', function () {
     'notebooks' => $notebooks,
     'theme' => $account->theme,
     'themes' => $themes,
+    'github_username' => $account->github_username,
+    'github_repo' => $account->github_repo,
     'config' => json_encode($config),
   ));
 });
@@ -211,7 +213,7 @@ on('POST', '/edit', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
-  foreach (array('name', 'theme', 'notebook') as $field) {
+  foreach (array('name', 'theme', 'notebook', 'github_username', 'github_repo') as $field) {
     $account->{$field} = $_POST[$field];
   }
   ob_start(); var_dump($account);
@@ -227,6 +229,9 @@ on('POST', '/nav-open', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
   header('Content-type: text/xml; charset=UTF-8');
+  if (!$account->config) {
+    echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><opml version=\"2.0\"><head><title>Configuration</title><expansionState>2</expansionState></head><body><outline text=\"_config\" name=\"My Site\"></outline><outline text=\"navigation\" type=\"list\"><outline text=\"Home\" url=\"./\"/><outline text=\"About\" url=\"./about.html\"/></outline></body></opml>";
+  }
   echo $account->config;
 });
 

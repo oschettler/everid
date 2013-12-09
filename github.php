@@ -41,7 +41,7 @@ on('GET', '/callback', function () {
     }
    
     // Exchange the auth code for a token
-    $token = github_api(config('github.token_url'), /*POST*/ array(
+    $token = api(config('github.token_url'), /*POST*/ array(
       'client_id' => config('github.oauth_client_id'),
       'client_secret' => config('github.oauth_client_secret'),
       'redirect_uri' => $callback_url,

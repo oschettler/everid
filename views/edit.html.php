@@ -42,6 +42,16 @@
     </select>
   </div>
 
+  <div class="form-group">
+    <label for="name">Github username</label>
+    <input type="text" class="form-control" name="github_username" id="gh-username-field" placeholder="Enter Github username" value="<?php echo $github_username; ?>">
+  </div>
+
+  <div class="form-group">
+    <label for="name">Github repository</label>
+    <input type="text" class="form-control" name="github_repo" id="gh-repo-field" placeholder="Enter Github repo" value="<?php echo $github_repo; ?>">
+  </div>
+
   <div class="row config">
     <div class="col-md-8 main">
       <?php echo partial('outliner-nav'); ?>
