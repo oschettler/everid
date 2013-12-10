@@ -30,7 +30,7 @@ on('GET', '/callback', function () {
         
         // The authenticated action
 
-        flash('success', 'Welcome back. Go to /user/update once you have your site configured');
+        flash('success', 'Welcome back.');
         redirect('/user/edit');
       } 
       else {
