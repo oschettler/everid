@@ -235,14 +235,6 @@ res: {$reslist}
             );
                         
             $content .= $el . "\n";
-            /*
-            if (preg_match('#^<div>(.*)</div>$#', $el, $matches)) {
-              $content .= $matches[1] . "\n";
-            }
-            else {
-              $content .= $el . "\n";
-            }
-            */
           }
 
           $github->save($fname, $content, file_sha($fname));
