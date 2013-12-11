@@ -60,6 +60,7 @@ function update($account) {
         '_posts' => NULL, 
         '_data' => NULL, 
         '_site' => NULL,
+        'res' => NULL,
       );     
 
       foreach ($tree->tree as $item) {
@@ -143,7 +144,7 @@ function update($account) {
         if (TRUE || !$localNote || $localNote->updated < $remoteNote->updated / 1000) {
           $note = $store->getNote($auth, $remoteNote->guid,
             TRUE, // withContent
-            FALSE, // withResourcesData
+            TRUE, // withResourcesData
             FALSE, // withResourcesRecognition
             FALSE // withResourcesAlternateData
           );
@@ -185,16 +186,54 @@ function update($account) {
           
           $tags = join(' ', $note->tagNames);
           
+          $mime = array(
+            'image/gif' => '.gif',
+            'image/jpeg' => '.jpg',
+            'image/png' => '.png',
+            'audio/wav' => '.wav',
+            'audio/mpeg' => '.m4a',
+            'application/pdf' => '.pdf'
+          );
+
+          $res = array();
+          $reslist = '';
+          if ($note->resources) {
+            foreach ($note->resources as $resource) {
+              $ext = !empty($mime[$resource->mime]) ? $mime[$resource->mime] : '.bin';
+              $resname = "res/{$resource->guid}{$ext}";
+              $reshash = md5($resource->data->body, 0);
+              $res[$reshash] = $resname;
+              $reslist .= "\n  {$reshash}: {$resname}";
+              $log[] = "Writing '{$resname}'";
+              $github->save($resname, $resource->data->body, file_sha($resname));
+            }
+          }
+          
           $content = "---
 title: {$note->title}
 layout: default
 tags: {$tags}
+res: {$reslist}
 ---
 ";
 
           $noteContent = simplexml_load_string($note->content);
           foreach ($noteContent->children() as $c) {
-            $el = $c->asXML();
+          
+            $el = preg_replace_callback(
+              '#<en-media hash="([^"]+)" type="([^"]+)"/>#', 
+              function ($matches) use ($res) {
+              
+                if (strpos($matches[2], 'image/') === 0) {
+                  return '<img src="' . $res[$matches[1]] . '"/>';
+                }
+                else {
+                  return '<a href="' . $res[$matches[1]] . '">' . $matches[1] . '</a>';
+                }
+              }, 
+              $c->asXML()
+            );
+                        
             $content .= $el . "\n";
             /*
             if (preg_match('#^<div>(.*)</div>$#', $el, $matches)) {
