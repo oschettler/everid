@@ -26,6 +26,9 @@
             <a href="#" class="dropdown-toggle" data-toggle="dropdown"><?php echo $account->username; ?> <b class="caret"></b></a>
             <ul class="dropdown-menu">
               <li>
+                <a href="/github/login">Connect with Github</a>
+              </li>
+              <li>
                 <a href="/user/edit">Edit</a>
               </li>
               <li>
