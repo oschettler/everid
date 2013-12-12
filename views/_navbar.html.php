@@ -11,10 +11,10 @@
     <div class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-          <a href="/about">About</a>
+          <a href="http://oschettler.github.io/everid/">Documentation</a>
         </li>
         <li>
-          <a href="/contact">Contact</a>
+          <a href="http://oschettler.github.io/everid/about.html">About</a>
         </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">

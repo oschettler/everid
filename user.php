@@ -1,64 +1,5 @@
 <?php
 /**
- * Recursively transform OPML to YAML
- */
-function opml2yaml($opml, $level = 0) {
-
-  $indent = str_repeat(' ', $level);
-  $yaml = "";
-
-  $attr = array();
-  foreach ($opml->attributes() as $name => $value) {
-    $attr[$name] = $value;
-  }
-
-  $outline_name = NULL;
-  if (isset($attr['text'])) {
-    $outline_name = $attr['text'];
-    unset($attr['text']);
-  }
-
-  $outline_type = NULL;
-  if (isset($attr['type'])) {
-    $outline_type = $attr['type'];
-    unset($attr['type']);
-  }
-
-  if ($outline_type != 'list') {
-    foreach ($attr as $name => $value) {
-      $yaml .= "{$indent}{$name}: {$value}\n";
-    }
-  }
-
-  foreach ($opml->outline as $child) {
-    list($child_name, $child_yaml) = opml2yaml($child, 2);
-
-    if ($outline_type == 'list') {
-      $yaml .= "{$indent}- text: {$child_name}\n{$child_yaml}";
-    }
-    else {
-      $yaml .= "{$indent}{$child_name}:\n{$child_yaml}";
-    }
-  }
-  
-  return array($outline_name, $yaml);
-}
-
-function file_sha($fname, $sha = NULL) {
-  static $files;
-  
-  if ($sha) {
-    $files[$fname] = $sha;
-  }
-  if (empty($files[$fname])) {
-    return NULL;
-  }
-  else {
-    return $files[$fname];
-  }
-}
-
-/**
  * Routes for prefix "/user"
  */
 before(function ($method, $path) {
@@ -197,6 +138,7 @@ on('GET', '/edit', function () {
     'notebooks' => $notebooks,
     'theme' => $account->theme,
     'themes' => $themes,
+    'domain' => $account->domain,
     'github_username' => $account->github_username,
     'github_repo' => $account->github_repo,
     'config' => json_encode($config),
@@ -214,7 +156,7 @@ on('POST', '/edit', function () {
     ->where_equal('token', $_SESSION['accessToken'])
     ->find_one();
 
-  foreach (array('name', 'theme', 'notebook', 'github_username', 'github_repo') as $field) {
+  foreach (array('name', 'theme', 'notebook', 'domain', 'github_username', 'github_repo') as $field) {
     if (!empty($_POST[$field])) {
       $account->{$field} = $_POST[$field];
     }

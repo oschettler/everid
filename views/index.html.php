@@ -19,4 +19,6 @@
   ?>
 </div>
 
-<p>*) Actually, it's not quite this simple yet. I have written up a <a href="https://www.evernote.com/shard/s1/sh/69e63429-5e29-4b78-8512-dbfef4ba2d6b/c151b3690957843af85fad48b02a5a32">walk-through</a>.</p>
+<p>*) Actually, it's not quite this simple yet. I have written up a <a href="http://oschettler.github.io/everid/">walk-through</a>.</p>
+
+<?php echo partial('disqus'); ?>
