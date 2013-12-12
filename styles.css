@@ -1,0 +1,12 @@
+/**
+ * Site styles
+ */
+body {
+  margin-top: 60px;
+}
+
+.fixed-bottom {
+  position: fixed;
+  bottom: 4px;
+  right: 4px;
+}
