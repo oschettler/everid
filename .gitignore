@@ -1,7 +1,0 @@
-vendor/*
-db/*
-composer.phar
-composer.lock
-settings.ini
-adminer.*
-
