@@ -2,5 +2,7 @@
   url: https://everid.net/
 - text: Documentation
   url: ./
+- text: How to
+  url: ./how-to.html
 - text: About
   url: ./about.html
