@@ -220,15 +220,28 @@ res: {$reslist}
           $noteContent = simplexml_load_string($note->content);
           foreach ($noteContent->children() as $c) {
           
-            $el = preg_replace_callback(
-              '#<en-media hash="([^"]+)" type="([^"]+)"/>#', 
-              function ($matches) use ($res) {
+            $el = preg_replace_callback(array(
+                '#<en-media(.*?)/>#', 
+                '#<en-media(.*?)></en-media>#'
+              ), 
+              function ($matches0) use ($res, $log) {
+                $attr = array();
               
-                if (strpos($matches[2], 'image/') === 0) {
-                  return '<img src="' . $res[$matches[1]] . '"/>';
+                foreach (preg_split('/\s+/', $matches0[1]) as $assign) {
+                  if (preg_match('/(\w+)="([^"]+)"/', $assign, $matches1)) {
+                    $attr[$matches1[1]] = $matches1[2];
+                  }
+                }
+                
+                if (empty($attr['hash']) || empty($attr['type'])) {
+                  $log[] = " - missing type/hash in {$matches0[0]}";
+                }
+                
+                if (strpos($attr['type'], 'image/') === 0) {
+                  return '<img src="' . $res[$attr['hash']] . '"/>';
                 }
                 else {
-                  return '<a href="' . $res[$matches[1]] . '">' . $matches[1] . '</a>';
+                  return '<a href="' . $res[$attr['hash']] . '">' . $attr['hash'] . '</a>';
                 }
               }, 
               $c->asXML()
@@ -268,8 +281,10 @@ res: {$reslist}
  *  - reason: "update"
  */
 on('GET', '/', function () {
+  $suffix = config('env') == 'prod' ? '' : '-stage';	
+
   header('Content-type: application/json; charset=UTF-8');
-  error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK' . json_encode($_GET) . "\n"), 3, '/tmp/everid-stage.log');
+  error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK' . json_encode($_GET) . "\n"), 3, '/tmp/everid' . $suffix . '.log');
   
   if (empty($_GET['userId'])) {
     die(json_encode(array(
@@ -297,7 +312,7 @@ on('GET', '/', function () {
   }
   
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'Java') === 0) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK') . json_encode(update($account)) . "\n", 3, '/tmp/everid-stage.log');
+    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK') . json_encode(update($account)) . "\n", 3, '/tmp/everid' . $suffix . '.log');
     echo 'OK';
   }
   else {

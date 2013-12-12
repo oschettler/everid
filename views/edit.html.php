@@ -43,6 +43,11 @@
   </div>
 
   <div class="form-group">
+    <label for="name">Domain name</label>
+    <input type="text" class="form-control" name="domain" id="domain-field" placeholder="Enter Domain name" value="<?php echo $domain; ?>">
+  </div>
+
+  <div class="form-group">
     <label for="name">Github username</label>
     <input type="text" class="form-control" name="github_username" id="gh-username-field" placeholder="Enter Github username" value="<?php echo $github_username; ?>">
   </div>

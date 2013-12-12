@@ -5,7 +5,7 @@
     <li>Select individual notes</li>
     <li>Define your page navigation</li>
     <li>Choose a theme</li>
-    <li>Go!</li>
+    <li>Go! *)</li>
   </ol>
 
   <?php
@@ -18,3 +18,7 @@
   endif;
   ?>
 </div>
+
+<p>*) Actually, it's not quite this simple yet. I have written up a <a href="http://oschettler.github.io/everid/">walk-through</a>.</p>
+
+<?php echo partial('disqus'); ?>
