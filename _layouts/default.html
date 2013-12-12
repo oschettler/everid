@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ site.name }} // {{ page.title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <style type="text/css">
+    .fixed-bottom {
+      position: fixed;
+      bottom: 4px;
+      right: 4px;
+    }
+    </style>
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    
+    <style type="text/css">
+      body {
+        padding-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">{{ site.name }}</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            {% for item in site.data.navigation %}
+              <li>
+                <a href="{{ item.url }}">{{ item.text }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div><!-- .navbar -->
+    <div class="container">
+      {{ content }}
+    </div>
+    {% if site.feedback_form %}
+      <a title="How can we assist you?" href="#feedback-modal" class="btn btn-info fixed-bottom" data-toggle="modal">
+        <i class="icon-exclamation-sign icon-white"></i> Contact
+      </a>
+      <div class="modal fade" id="feedback-modal" role="dialog">
+        <div class="modal-dialog">
+          <form class="modal-content">
+            <div class="modal-header">
+              <a class="close" data-dismiss="modal">×</a>
+              <h4 class="modal-title">Your direct link to us</h4>
+            </div>
+            <div class="modal-body">
+              <p id="message" class="alert alert-success hide"></p>
+              <p id="ask">Write us what you think!</p>
+              <div id="fields"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+          </form><!-- .modal-content -->
+        </div><!-- .modal-dialog -->
+      </div>
+      <script src="//feedback.schettler.net/contact.js"></script>
+    {% endif %}
+  </body>
+</html>
