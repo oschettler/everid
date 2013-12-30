@@ -1,7 +1,25 @@
-; sites = /optional/path/to/sites/sites
+;
+; EverID configuration
+;
+;env = prod
+env = stage
 
-oauth.callback_url = %schema://%host/auth/callback
-oauth.consumer_key = CONSUMER_KEY
-oauth.consumer_secret = CONSUMER_SECRET
+evernote.oauth_callback_url = %schema://%host/auth/callback
+evernote.oauth_consumer_key = EVERNOTE_CONSUMER_KEY
+evernote.oauth_consumer_secret = EVERNOTE_CONSUMER_SECRET
 
+;evernote.sandbox = false
 evernote.sandbox = true
+
+github.app_name = EverID
+github.oauth_client_id = GITHUB_CLIENT_ID
+github.oauth_client_secret = GITHUB_CLIENT_SECRET
+
+github.authorize_url = https://github.com/login/oauth/authorize
+github.token_url = https://github.com/login/oauth/access_token
+github.api_url_base = https://api.github.com/
+github.oauth_callback_url = %schema://%host/github/callback
+
+disqus.shortname = DISQUS_SHORTNAME
+;
+; End.

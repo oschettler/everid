@@ -23,7 +23,7 @@ Websites from Evernote notebooks
 
 ### Database
 
-You need an SQlite database in db/everid.sqlite that is currently not created automatically. Use your favorite SQlite tool or the sqlite3 command line and create the following tables:
+You need an SQlite database in ../db/everid.sqlite that is currently not created automatically. Use your favorite SQlite tool or the sqlite3 command line and create the following tables:
 
     DROP TABLE IF EXISTS "account";
     CREATE TABLE "account" (
@@ -70,3 +70,8 @@ You need an SQlite database in db/everid.sqlite that is currently not created au
 Make sure that the database is writable by the www-data user:
 
     sudo chown -R www-data db
+
+### Settings
+
+Create a file ../settings.ini by copying the example settings.ini.default
+ 
