@@ -14,10 +14,10 @@ require_once 'autoload.php';
 
 require_once 'Evernote/Client.php';
 
-ORM::configure('sqlite:db/everid.sqlite');
+ORM::configure('sqlite:../db/everid.sqlite');
 
 config('dispatch.views', './views');
-config('source', 'settings.ini');
+config('source', '../settings.ini');
 
 /**
  * Recursively transform OPML to YAML

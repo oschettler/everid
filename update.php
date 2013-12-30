@@ -215,6 +215,8 @@ layout: default
 tags: {$tags}
 res: {$reslist}
 ---
+
+<h1>{{ page.title }}</h1>
 ";
 
           $noteContent = simplexml_load_string($note->content);
