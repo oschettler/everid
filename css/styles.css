@@ -66,3 +66,7 @@ ul#attributes input[name=value] {
   margin-right: 0;
   width: 59%;
 }
+
+th.action, td.action {
+  text-align: right;
+}

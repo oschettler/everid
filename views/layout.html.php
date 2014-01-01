@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title><?php echo $site_name, ' // ', strip_tags($page_title); ?></title>
+    <title><?php echo config('site.name'), ' // ', strip_tags($page_title); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
@@ -11,6 +11,7 @@
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
     <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="//rawgithub.com/carhartl/jquery-cookie/master/jquery.cookie.js"></script>
     <script src="/concord/concord.js"></script>
     <script src="/concord/concordUtils.js"></script>
     <script src="/riotjs/jquery.riot.min.js"></script>
@@ -27,7 +28,7 @@
     <?php echo partial('alert'); ?>
     <?php
     echo partial('navbar', array(
-      'site_name' => $site_name, 
+      'site_name' => config('site.name'), 
       'page_title' => $page_title
     )); 
     ?>

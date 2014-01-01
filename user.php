@@ -35,7 +35,7 @@ before(function ($method, $path) {
     die("NO USER: " . json_encode($e));
   }
       
-  $account = ORM::for_table('account')
+  $account = ORM::for_table('user')
     ->where_equal('username', $user->username)
     ->find_one();
 
@@ -52,13 +52,12 @@ before(function ($method, $path) {
   
     $_SESSION['account'] = (object)array(
       'username' => $account->username,
+      'id' => $account->id,
       'evernote_id' => $account->evernote_id,
-      'name' => $account->name,
-      'notebook' => $account->notebook,
     );
   }
   else {
-    $account = ORM::for_table('account')->create();
+    $account = ORM::for_table('user')->create();
     $account->username = $user->username;
     $account->evernote_id = $user->id;
     $account->token = $_SESSION['accessToken'];
@@ -69,37 +68,45 @@ before(function ($method, $path) {
 
     $_SESSION['account'] = (object)array(
       'username' => $account->username,
+      'id' => $account->id,
     );
   }
   
   // var_dump(array('BEFORE' => $account));
-  
   $missingInfo = FALSE;
+  /*
   foreach (array('name', 'notebook') as $field) {
     if (empty($account->{$field})) {
       $missingInfo = TRUE;
     }
   }
+  */
+  
   
   if ($path != 'user/edit' && $missingInfo) {
     error_log("PATH {$path}\n", 3, '/tmp/everid.log');
     flash('success', 'Welcome. We need some minimal configuration');
-    redirect('/user/edit');
+    redirect('/user/sites');
   }
 });
 
-on('GET', '/edit', function () {
+on('GET', '/sites', function () {
   if (empty($_SESSION['accessToken'])) {
     flash('error', 'Not logged in');
     redirect('/');
   }
   
-  //var_dump(array('BEFORE' => $account)); exit;
-  
-  $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
-    ->find_one();
+  $sites = ORM::for_table('site')
+    ->where('user_id', $_SESSION['account']->id)
+    ->find_many();
 
+  render('sites', array(
+    'page_title' => 'Sites',
+    'sites' => $sites,
+  ));
+});
+
+function render_site_form($site) {
   $themes = array();
   foreach (ORM::for_table('theme')
     ->find_many() as $theme) {
@@ -125,67 +132,146 @@ on('GET', '/edit', function () {
     error_log(ob_get_clean() . "\n", 3, '/tmp/everid.log');
   }
   
-  $config = $account->config;
+  $config = $site->config;
   if (empty($config)) {
     $config = '<?xml version="1.0" encoding="UTF-8"?><opml version="2.0"><head><title>Config</title></head><body><outline text=""/></body></opml>';
   }
 
   render('edit', array(
-    'site_name' => 'EverID',
-    'page_title' => 'Edit User',
-    'name' => $account->name,
-    'notebook' => $account->notebook,
+    'id' => $site->id,
+    'page_title' => empty($site->name) ? 'Add site' : 'Edit site',
+    'name' => $site->name,
+    'notebook' => $site->notebook,
     'notebooks' => $notebooks,
-    'theme' => $account->theme,
+    'theme' => $site->theme,
     'themes' => $themes,
-    'domain' => $account->domain,
-    'github_username' => $account->github_username,
-    'github_repo' => $account->github_repo,
+    'domain' => $site->domain,
+    'github_username' => $site->github_username,
+    'github_repo' => $site->github_repo,
     'config' => json_encode($config),
+  ));  
+}
+
+on('GET', '/site/add', function () {
+  if (empty($_SESSION['accessToken'])) {
+    flash('error', 'Not logged in');
+    redirect('/');
+  }
+  
+  render_site_form((object)array(
+    'id' => 'NONE',
+    'name' => '',
+    'notebook' => '',
+    'theme' => '',
+    'domain' => '',
+    'github_username' => '',
+    'github_repo' => '',
+    'config' => '',
   ));
+  
 });
 
-on('POST', '/edit', function () {
+on('GET', '/site/:id', function () {
+  if (empty($_SESSION['accessToken'])) {
+    flash('error', 'Not logged in');
+    redirect('/');
+  }
+  
+  //var_dump(array('BEFORE' => $account)); exit;
+  
+  $site = ORM::for_table('site')
+    ->where_equal('id', params('id'))
+    ->find_one();
+  
+  render_site_form($site);
+
+});
+
+function save_site($site) {
+  foreach (array('name', 'theme', 'notebook', 'domain', 'github_username', 'github_repo') as $field) {
+    if (!empty($_POST[$field])) {
+      $site->{$field} = $_POST[$field];
+    }
+  }
+  
+  $site->user_id = $_SESSION['account']->id;
+  
+  $site->save();
+}
+
+on('POST', '/site/add', function () {
 
   if (empty($_SESSION['accessToken'])) {
     flash('error', 'Not logged in');
     redirect('/');
   }
 
-  $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
-    ->find_one();
+  $site = ORM::for_table('site')->create();
+  $site->created = $site->updated = time();
 
-  foreach (array('name', 'theme', 'notebook', 'domain', 'github_username', 'github_repo') as $field) {
-    if (!empty($_POST[$field])) {
-      $account->{$field} = $_POST[$field];
-    }
+  save_site($site);
+
+  json_out(array('id' => $site->id, 'status' => 'added'));
+});
+
+on('POST', '/site/:id', function () {
+
+  if (empty($_SESSION['accessToken'])) {
+    flash('error', 'Not logged in');
+    redirect('/');
   }
-  $account->save();
-  flash('success', 'Account has been saved');
-  //redirect('/user/edit');
-  echo "OK";
+
+  $site = ORM::for_table('site')
+    ->where_equal('id', params('id'))
+    ->find_one();
+    
+  $site->updated = time();
+
+  save_site($site);
+
+  json_out(array('id' => $site->id, 'status' => 'saved'));
 });
 
 on('POST', '/nav-open', function () {
-  $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
-    ->find_one();
+  $id = params('id');
+  
+  if ($id == 'NONE') {
+    $site = ORM::for_table('site')->create();
+  }
+  else {
+    $site = ORM::for_table('site')
+      ->where('id', $id)
+      ->find_one();
+  }
+
   header('Content-type: text/xml; charset=UTF-8');
-  if (!$account->config) {
+  if (!$site->config) {
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><opml version=\"2.0\"><head><title>Configuration</title><expansionState>2</expansionState></head><body><outline text=\"_config\" name=\"My Site\"></outline><outline text=\"navigation\" type=\"list\"><outline text=\"Home\" url=\"./\"/><outline text=\"About\" url=\"./about.html\"/></outline></body></opml>";
   }
-  echo $account->config;
+  echo $site->config;
 });
 
 on('POST', '/nav-save', function () {
-  $account = ORM::for_table('account')
-    ->where_equal('token', $_SESSION['accessToken'])
+  error_log("NAV-SAVE id=" . params('id') . "\n", 3, '/tmp/everid.log');
+  $site = ORM::for_table('site')
+    ->where('id', params('id'))
     ->find_one();
 
-  $account->config = $_POST['opml'];
-  $account->save();
+  $site->config = $_POST['opml'];
+  $site->save();
   echo json_encode('OK');
+});
+
+on('POST', '/del-site/:id', function () {
+  $id = params('id');
+  $site = ORM::for_table('site')
+    ->where('id', $id)
+    ->find_one();
+  if (!$site) {
+    error(500, 'No such site');
+  }
+  $site->delete();
+  json_out(array('success', "Site #{$id} deleted"));
 });
 
 /**

@@ -29,7 +29,7 @@
                 <a href="/github/login">Connect with Github</a>
               </li>
               <li>
-                <a href="/user/edit">Edit</a>
+                <a href="/user/sites">Sites</a>
               </li>
               <li>
                 <a href="/auth/logout">Logout</a>

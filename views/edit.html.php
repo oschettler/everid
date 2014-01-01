@@ -1,4 +1,5 @@
-<h1>Edit User</h1>
+<h1><?php echo $page_title; ?></h1>
+
 <form id="edit-user" role="form" method="POST">
   <div class="form-group">
     <label for="name">Site name</label>
@@ -85,7 +86,7 @@
 <script type="text/javascript">
 jQuery(function ($) {
 	$("#outliner").concord({
-	  id: "4142",
+	  id: "<?php echo $id; ?>",
 	  open: '/user/nav-open',
 		save: '/user/nav-save',
 		callbacks: {
@@ -135,14 +136,17 @@ jQuery(function ($) {
 	  
     console.log("SAVING");
     $.post($form.attr('action'), $form.serialize(), function (data) {
-      console.log("PHASE 1 " + data);
-        
+      console.log("PHASE 1 " + data.status);
+      
+      $outliner.concord().root.data('id', data.id);
+      
       // Add temporarily removed outline attributes again
       $('div.right').append(nav_attributes);
 
       function done() {
         console.log("DONE");
-        $button.prop('disabled', false);
+        //$button.prop('disabled', false);
+        location.href = "/user/sites";
       }
 
       if (opHasChanged()) {
@@ -152,10 +156,10 @@ jQuery(function ($) {
         done();
       }
 
-    });
+    }, 'json');
   	return false;
 	});
-	
+  
 	/*
 	 * START: Render mode
 	 */
