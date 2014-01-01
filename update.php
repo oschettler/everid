@@ -284,7 +284,7 @@ on('GET', '/', function () {
   $suffix = config('env') == 'prod' ? '' : '-stage';	
 
   header('Content-type: application/json; charset=UTF-8');
-  error_log(strftime('[%Y-%m-%d %H:%M:%S] STAGE-WEBHOOK' . json_encode($_GET) . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+  error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK' . json_encode($_GET) . "\n"), 3, '/tmp/everid' . $suffix . '.log');
   
   if (empty($_GET['userId'])) {
     error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#1' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
