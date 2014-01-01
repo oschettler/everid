@@ -86,11 +86,11 @@ before(function ($method, $path) {
   if ($path != 'user/edit' && $missingInfo) {
     error_log("PATH {$path}\n", 3, '/tmp/everid.log');
     flash('success', 'Welcome. We need some minimal configuration');
-    redirect('/user/sites');
+    redirect('/user/edit');
   }
 });
 
-on('GET', '/sites', function () {
+on('GET', '/edit', function () {
   if (empty($_SESSION['accessToken'])) {
     flash('error', 'Not logged in');
     redirect('/');
