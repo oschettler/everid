@@ -146,7 +146,7 @@ jQuery(function ($) {
       function done() {
         console.log("DONE");
         //$button.prop('disabled', false);
-        location.href = "/user/sites";
+        location.href = "/user/edit";
       }
 
       if (opHasChanged()) {
