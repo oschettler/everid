@@ -275,7 +275,7 @@ on('POST', '/del-site/:id', function () {
 });
 
 /**
- * Update a site for the currently logged-in user
+ * Update sites for the currently logged-in user
  */
 on('GET', '/update', function () {
   require_once 'update.php';
@@ -289,7 +289,7 @@ on('GET', '/update', function () {
     
     $u = $_SERVER['argv'][1];
     echo "Updating for user {$u}\n";
-    $account = ORM::for_table('account')
+    $account = ORM::for_table('user')
       ->where_equal('username', $u)
       ->find_one();
   }
@@ -308,7 +308,7 @@ on('GET', '/update', function () {
     //var_dump(array('BEFORE' => $account)); exit;
     
     $auth = $_SESSION['accessToken'];
-    $account = ORM::for_table('account')
+    $account = ORM::for_table('user')
       ->where_equal('token', $auth)
       ->find_one();
   }
@@ -317,13 +317,19 @@ on('GET', '/update', function () {
     die("No such user {$account}\n");
   }
   
-  list($status, $msg) = update($account);
+  $sites = ORM::for_table('site')
+    ->where('user_id', $account->id)
+    ->find_many();
   
-  if ($status == 'success') {
-    echo join($lf, $msg);
-  } 
-  else {
-    echo "ERROR: {$msg}";
+  foreach ($sites as $site) {
+    list($status, $msg) = update($account->token, $site);
+  
+    if ($status == 'success') {
+      echo join($lf, $msg);
+    } 
+    else {
+      echo "ERROR: {$msg}";
+    }
   }
 });
 

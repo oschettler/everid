@@ -2,15 +2,13 @@
 
 require_once 'github_api.php';
 
-function update($account) {
+function update($auth, $site) {
   $log = array();
 
-  $auth = $account->token;
-
   $github = new Github(
-    $account->github_token,
-    $account->github_username,
-    $account->github_repo
+    $site->github_token,
+    $site->github_username,
+    $site->github_repo
   );
     
   // Check for gh-pages branch
@@ -82,8 +80,8 @@ function update($account) {
         }  
       }
       
-      $log[] = "Theme '{$account->theme}'";
-      $theme = dirname(__FILE__) . '/themes/' . $account->theme . '/';
+      $log[] = "Theme '{$site->theme}'";
+      $theme = dirname(__FILE__) . '/themes/' . $site->theme . '/';
       if (!is_dir($theme)) {
         return array('error',
           "No such theme '{$theme}'"
@@ -110,16 +108,16 @@ function update($account) {
         );
       }
             
-      if (!empty($account->domain)) {
-        $log[] = "Will serve domain {$account->domain}";
+      if (!empty($site->domain)) {
+        $log[] = "Will serve domain {$site->domain}";
         $github->save(
           'CNAME',
-          $account->domain,
+          $site->domain,
           file_sha('CNAME')
         );
       }
       
-      $xml = simplexml_load_string($account->config);
+      $xml = simplexml_load_string($site->config);
       $config = array();
       foreach ($xml->body->outline as $outline) {
         list($name, $yaml) = opml2yaml($outline);
@@ -295,7 +293,7 @@ on('GET', '/', function () {
     )));
   }
   
-  $account = ORM::for_table('account')
+  $account = ORM::for_table('user')
     ->where_equal('evernote_id', $_GET['userId'])
     ->find_one();
 
@@ -306,7 +304,11 @@ on('GET', '/', function () {
     )));
   }
   
-  if (empty($_GET['notebookGuid']) || $account->notebook != $_GET['notebookGuid']) {
+  $site = ORM::for_table('site')
+    ->where('notebook', $_GET['notebookGuid'])
+    ->find_one();
+  
+  if (empty($_GET['notebookGuid']) || !$site) {
     die(json_encode(array(
       'status' => 'info', 
       'message' => "Unregistered notebook"
@@ -314,10 +316,11 @@ on('GET', '/', function () {
   }
   
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'Java') === 0) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK') . json_encode(update($account)) . "\n", 3, '/tmp/everid' . $suffix . '.log');
+    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK') 
+      . json_encode(update($account->token, $site)) . "\n", 3, '/tmp/everid' . $suffix . '.log');
     echo 'OK';
   }
   else {
-    echo json_encode(update($account));
+    echo json_encode(update($account->token, $site));
   }
 });
