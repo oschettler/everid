@@ -34,6 +34,7 @@ function update($auth, $site) {
     'token' => $auth,
     'sandbox' => config('evernote.sandbox'),
   ));
+  
   $store = $client->getNoteStore();
   foreach ($store->listNotebooks() as $notebook) {
     if ($notebook->guid == $site->notebook) {
@@ -322,13 +323,24 @@ on('GET', '/', function () {
   }
   
   error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK GO' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+  
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'Java') === 0) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK updating site #' . $site->id . ' for user #' . $account->id . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+    $subject = 'Updated site #' . $site->id . ' for user #' . $account->id;
+    error_log(strftime("[%Y-%m-%d %H:%M:%S] WEBHOOK {$subject}" . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+    
+    $log = update($account->token, $site);
+    
     error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK') 
-      . json_encode(update($account->token, $site)) . "\n", 3, '/tmp/everid' . $suffix . '.log');
+      . json_encode($log) . "\n", 3, '/tmp/everid' . $suffix . '.log');
+    
+    if ($account->email) {
+        mail($account->email, "[EverID - {$log[0]}] {$subject}", explode("\n", $log[1]));
+    }
+    
     echo 'OK';
   }
   else {
-    echo json_encode(update($account->token, $site));
+    $log = update($account->token, $site);
+    echo json_encode($log);
   }
 });

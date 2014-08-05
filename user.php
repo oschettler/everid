@@ -96,14 +96,37 @@ on('GET', '/edit', function () {
     redirect('/');
   }
   
+  $user = ORM::for_table('user')
+    ->where('id', $_SESSION['account']->id)
+    ->find_one();
+
   $sites = ORM::for_table('site')
     ->where('user_id', $_SESSION['account']->id)
     ->find_many();
 
   render('sites', array(
     'page_title' => 'Sites',
+    'email' => $user->email, 
     'sites' => $sites,
   ));
+});
+
+on('POST', '/email', function () {
+  if (empty($_SESSION['accessToken'])) {
+    flash('error', 'Not logged in');
+    redirect('/');
+  }
+  
+  $user = ORM::for_table('user')
+    ->where('id', $_SESSION['account']->id)
+    ->find_one();
+
+  $user->email = params('email');
+  $user->updated = time();
+  $user->save();
+  
+  flash('success', 'Email address saved.');
+  redirect('/user/edit');
 });
 
 function render_site_form($site) {

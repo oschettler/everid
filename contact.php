@@ -2,6 +2,14 @@
 /**
  * Smallish contact application as seen on feedback.schettler.net 
  */
+define('CLIENT_ID', config('contact.client_id'));
+define('DB_USERNAME', config('contact.db_username'));
+define('DB_PASSWORD', config('contact.db_password'));
+define('DB_NAME', config('contact.db_name'));
+define('TRELLO_API_KEY', config('trello.api_key'));
+define('TRELLO_API_ENDPOINT', config('trello.api_endpoint'));
+define('TRELLO_API_LIST_ID', config('trello.api_list_id'));
+define('TRELLO_API_TOKEN', config('trello.api_token'));
 
 on('GET', '/', function () {
 

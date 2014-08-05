@@ -1,5 +1,18 @@
 <h1><?php echo $page_title; ?></h1>
 
+<form id="edit-user" role="form" method="POST" action="/user/email">
+  <div class="form-group">
+    <label for="name">Email address</label>
+    <input type="email" class="form-control" name="email" id="name-field" placeholder="you@domain.com" value="<?php echo $email; ?>">
+    <p>Enter your email address here if you want to get an email for each page build.</p> 
+  </div>
+
+  <div class="form-group buttons">
+    <button type="submit" class="btn btn-default">Save</button>
+  </div>
+
+</form>
+
 <table class="table table-striped">
   <thead>
     <th>Name</th>
