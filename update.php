@@ -288,7 +288,7 @@ on('GET', '/', function () {
   error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK' . json_encode($_GET) . "\n"), 3, '/tmp/everid' . $suffix . '.log');
   
   if (empty($_GET['userId'])) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#1' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#1 - Missing UserId' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
     die(json_encode(array(
       'status' => 'error', 
       'message' => 'Missing UserId'
@@ -300,10 +300,10 @@ on('GET', '/', function () {
     ->find_one();
 
   if (!$account) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#2' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#2 - ' . "No such user {$_GET['userId']}\n"), 3, '/tmp/everid' . $suffix . '.log');
     die(json_encode(array(
       'status' => 'error', 
-      'message' => "No such user '{$_GET['userId']}"
+      'message' => "No such user {$_GET['userId']}"
     )));
   }
   
@@ -315,14 +315,14 @@ on('GET', '/', function () {
     ->find_one();
   
   if (empty($_GET['notebookGuid']) || !$site) {
-    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#3' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+    error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK error#3 - Unregistered notebook' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
     die(json_encode(array(
       'status' => 'info', 
       'message' => "Unregistered notebook"
     )));
   }
   
-  error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK GO' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
+  error_log(strftime('[%Y-%m-%d %H:%M:%S] WEBHOOK Start endering' . "\n"), 3, '/tmp/everid' . $suffix . '.log');
   
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'Java') === 0) {
     $subject = 'Updated site #' . $site->id . ' for user #' . $account->id;
@@ -334,7 +334,7 @@ on('GET', '/', function () {
       . json_encode($log) . "\n", 3, '/tmp/everid' . $suffix . '.log');
     
     if ($account->email) {
-        mail($account->email, "[EverID - {$log[0]}] {$subject}", explode("\n", $log[1]));
+        mail($account->email, "[EverID - {$log[0]}] {$subject}", join("\n", $log[1]));
     }
     
     echo 'OK';
