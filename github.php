@@ -59,7 +59,7 @@ on('GET', '/callback', function () {
   if (!empty($_SESSION['github_access_token'])) {
   
     $session_account = $_SESSION['account'];
-    $account = ORM::for_table('account')
+    $account = ORM::for_table('user')
       ->where_equal('username', $session_account->username)
       ->find_one();
 

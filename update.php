@@ -36,7 +36,7 @@ function update($auth, $site) {
   ));
   $store = $client->getNoteStore();
   foreach ($store->listNotebooks() as $notebook) {
-    if ($notebook->guid == $account->notebook) {
+    if ($notebook->guid == $site->notebook) {
       $filter = new EDAM\NoteStore\NoteFilter(array(
         'notebookGuid' => $notebook->guid,
       ));
@@ -161,7 +161,7 @@ function update($auth, $site) {
           }
           if (!$url) {
             return array('error', 
-              "You need to set the URL on note {$note->title}"
+              "You need to set the URL on note {$note->title}. Tags are " . join(', ', $note->tagNames)
             );
           }
                   
@@ -307,6 +307,9 @@ on('GET', '/', function () {
   }
   
   $site = ORM::for_table('site')
+    ->select('site.*')
+    ->select('user.github_token', 'github_token')
+    ->left_outer_join('user', array('site.user_id', '=', 'user.id'))
     ->where('notebook', $_GET['notebookGuid'])
     ->find_one();
   
