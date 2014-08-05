@@ -4,5 +4,7 @@
   url: ./
 - text: How to
   url: ./how-to.html
+- text: Internals
+  url: ./internals.html
 - text: About
   url: ./about.html
