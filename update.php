@@ -155,8 +155,8 @@ function update($auth, $site) {
           }
           else
           foreach ($note->tagNames as $tag) {
-            if (preg_match('/^url:(\S+)/i', $tag, $matches)) {
-              $url = $matches[1];
+            if (preg_match('/^url(:|=)(\S+)/i', $tag, $matches)) {
+              $url = $matches[2];
             }
           }
           if (!$url) {
