@@ -52,12 +52,13 @@ res:
 <li>If requested, create the CNAME file for a custom domain</li>
 <li>Extract the configuration and navigation items from the site outline</li>
 </ul>
-<div>Then, the notes in the notebook are traversed. The page address of each note is determined either from the sourceURL or a tag with the prefix „url:" or „url=" . This is so that notes entered on the Evernote mobile client can also be rendered </div>
+<div>Then, the notes in the notebook are traversed. The page address of each note is determined either from the sourceURL or a tag with the prefix „url:" or „url=" . This is so that notes entered on the Evernote mobile client can also be rendered, where this client does not offer a sourceURL field.</div>
 </div>
-<div>
-<ul>
-<li>the page address</li>
-<li><br/></li>
-</ul>
-</div>
+<div><br/></div>
+<div>Next, images are extracted from the note and written to Github.</div>
+<div><br/></div>
+<div>Finally, the HTML of the note is rendered, prefixed by a preamble with title, layout name, tag list, and list of resources (i.e. images or attachments). During rendering, image references are replaced with proper HTML tags.</div>
+<div><br/></div>
+<div><br/></div>
+<div><br/></div>
 </div>
