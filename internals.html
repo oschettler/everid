@@ -13,6 +13,32 @@ res:
 <li>client libraries for both <a href="https://dev.evernote.com/doc/reference">Evernote </a>and <a href="https://developer.github.com/v3/">Github </a>to access there APIs</li>
 <li>an SQlite database to store the information entered on https://everid.net for account and site configuration</li>
 </ul>
+<div><b>Routing</b></div>
 <div><br/></div>
+<div>The sole entry point into the site is the file index.php. From here, the various resources are dispatched:</div>
+<div>
+<ul>
+<li>/ - The site’s landing page</li>
+<li>/webhook - Called by Evernote when an update to a registered notebook has to be processed</li>
+<li>/user - Editing a user’s property and sites</li>
+<li>/auth - Authenticating against Evernote</li>
+<li>/github - Authenticating against Github</li>
+<li>/contact - A small contact form<br/></li>
+</ul>
+<div><b>Authentication</b></div>
+</div>
+<div><br/></div>
+<div>Authentication on EverID is via the Evernote service. A single Evernote user may register multiple sites to be rendered from an Evernote notebook.</div>
+<div><br/></div>
+<div><b>Rendering</b></div>
+<div><br/></div>
+<div>Rendering happens in the file update.php and is triggered by a call to the endpoint /webhook. Evernote passes a set of parameters when calling this address:</div>
+<div>
+<ul>
+<li>userId</li>
+<li>notebookGuid</li>
+</ul>
+</div>
+<div>From these parameters the owner and site to be rendered are retrieved.  </div>
 <div><br/></div>
 </div>
