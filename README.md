@@ -20,7 +20,8 @@ Websites from Evernote notebooks
     source ~olav/.bash_profile
     apt-get install libpcre3-dev
     pecl install oauth
-    echo 'extension=oauth.so' > 20-oauth.ini
+    echo 'extension=oauth.so' > /etc/php5/mods-available/oauth.ini
+    cd 
 
 ### Database
 
