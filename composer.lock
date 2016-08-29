@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "eb888ea84a45675db2bc1f4dd4da889d",
-    "content-hash": "be56596918ef42a15b75d881aaedbd55",
+    "hash": "2bdb9044f85fd7ad151e7db46158d232",
+    "content-hash": "ba64176ef9879f847f6289d4e412905b",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -73,6 +73,48 @@
                 "string"
             ],
             "time": "2015-11-06 14:35:42"
+        },
+        {
+            "name": "evernote/evernote",
+            "version": "1.26.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/evernote/evernote-sdk-php.git",
+                "reference": "177e10b9fd56ed6ff8857cf937408f069bc5c7e9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/evernote/evernote-sdk-php/zipball/177e10b9fd56ed6ff8857cf937408f069bc5c7e9",
+                "reference": "177e10b9fd56ed6ff8857cf937408f069bc5c7e9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "lib/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache"
+            ],
+            "authors": [
+                {
+                    "name": "Evernote and contributors",
+                    "homepage": "https://github.com/evernote/evernote-sdk-php/contributors"
+                }
+            ],
+            "description": "Evernote PHP SDK",
+            "homepage": "https://github.com/evernote/evernote-sdk-php",
+            "keywords": [
+                "api",
+                "evernote",
+                "sdk"
+            ],
+            "time": "2016-04-04 20:41:16"
         },
         {
             "name": "illuminate/auth",
@@ -1220,6 +1262,89 @@
                 "lumen"
             ],
             "time": "2016-08-01 14:48:25"
+        },
+        {
+            "name": "league/flysystem",
+            "version": "1.0.27",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/flysystem.git",
+                "reference": "50e2045ed70a7e75a5e30bc3662904f3b67af8a9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/50e2045ed70a7e75a5e30bc3662904f3b67af8a9",
+                "reference": "50e2045ed70a7e75a5e30bc3662904f3b67af8a9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "conflict": {
+                "league/flysystem-sftp": "<1.0.6"
+            },
+            "require-dev": {
+                "ext-fileinfo": "*",
+                "mockery/mockery": "~0.9",
+                "phpspec/phpspec": "^2.2",
+                "phpunit/phpunit": "~4.8"
+            },
+            "suggest": {
+                "ext-fileinfo": "Required for MimeType",
+                "league/flysystem-aws-s3-v2": "Allows you to use S3 storage with AWS SDK v2",
+                "league/flysystem-aws-s3-v3": "Allows you to use S3 storage with AWS SDK v3",
+                "league/flysystem-azure": "Allows you to use Windows Azure Blob storage",
+                "league/flysystem-cached-adapter": "Flysystem adapter decorator for metadata caching",
+                "league/flysystem-copy": "Allows you to use Copy.com storage",
+                "league/flysystem-dropbox": "Allows you to use Dropbox storage",
+                "league/flysystem-eventable-filesystem": "Allows you to use EventableFilesystem",
+                "league/flysystem-rackspace": "Allows you to use Rackspace Cloud Files",
+                "league/flysystem-sftp": "Allows you to use SFTP server storage via phpseclib",
+                "league/flysystem-webdav": "Allows you to use WebDAV storage",
+                "league/flysystem-ziparchive": "Allows you to use ZipArchive adapter"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "League\\Flysystem\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Frank de Jonge",
+                    "email": "info@frenky.net"
+                }
+            ],
+            "description": "Filesystem abstraction: Many filesystems, one API.",
+            "keywords": [
+                "Cloud Files",
+                "WebDAV",
+                "abstraction",
+                "aws",
+                "cloud",
+                "copy.com",
+                "dropbox",
+                "file systems",
+                "files",
+                "filesystem",
+                "filesystems",
+                "ftp",
+                "rackspace",
+                "remote",
+                "s3",
+                "sftp",
+                "storage"
+            ],
+            "time": "2016-08-10 08:55:11"
         },
         {
             "name": "monolog/monolog",
