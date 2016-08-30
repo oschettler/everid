@@ -15,6 +15,8 @@ use EDAM\NoteStore\NoteMetadata;
 
 class EnwriteExport extends Command
 {
+    const BATCH_SIZE = 50;
+
     /**
      * The name and signature of the console command.
      *
@@ -115,7 +117,7 @@ class EnwriteExport extends Command
             else {
                 $fname = '_data/' . preg_replace('/\W+/u', '_', $name) . '.yml';
             }
-            $this->comment("Writing {$fname}");
+            $this->comment(" - Writing {$fname}");
             $exporter->save($fname, $yaml, file_sha($fname));
         }
     }
@@ -143,7 +145,7 @@ class EnwriteExport extends Command
                 $resname = "res/{$resource->guid}{$ext}";
                 $reshash = md5($resource->data->body, 0);
                 $res[$reshash] = $resname;
-                $this->comment("Writing '{$resname}'");
+                $this->comment(" - Writing '{$resname}'");
                 $this->filesystem->put($path . $resname, $resource->data->body);
             }
         }
@@ -172,10 +174,10 @@ class EnwriteExport extends Command
                     }
 
                     if (strpos($attr['type'], 'image/') === 0) {
-                        return '![Bild](' . $res[$attr['hash']] . ')';
+                        return '<img src="' . $res[$attr['hash']] . '">';
                     }
                     else {
-                        return '[' . $attr['hash'] . '](' . $res[$attr['hash']] . ')';
+                        return '<a href="' . $res[$attr['hash']] . '">' . $attr['hash'] . '</a>';
                     }
                 },
                 $c->asXML()
@@ -226,13 +228,13 @@ class EnwriteExport extends Command
         }
 
         file_put_contents('/tmp/xxx', $this->replaceMedia($note, $pathPrefix));
-        $content = shell_exec('node ../htm2markdown-cli/html2markdown-cli.js /tmp/xxx');
+        $content = shell_exec('html2text /tmp/xxx');
 
         $content = "---
 title: {$note->title}
 guid: {$note->guid}
 created: {$created}
-updated. {$updated}
+updated: {$updated}
 tags: {$tags}
 url: {$url}
 ---
@@ -271,11 +273,20 @@ url: {$url}
 
 
                 $path = strtolower($notebook->name);
-                $noteList = $store->findNotesMetadata($filter, 0, 10, $spec);
-                foreach ($noteList->notes as $noteMetadata) {
-                    $this->updateNote($store, $noteMetadata, $path);
 
-                } // notes
+                $offset = 0;
+                $totalNotes = null;
+                do {
+                    $noteList = $store->findNotesMetadata($filter, $offset, self::BATCH_SIZE, $spec);
+                    $totalNotes = $noteList->totalNotes;
+                    $offset += self::BATCH_SIZE;
+
+                    foreach ($noteList->notes as $noteMetadata) {
+                        $this->updateNote($store, $noteMetadata, $path);
+                    } // notes
+                }
+                while ($offset < $totalNotes);
+
             } // matching notebook
         } // all notebooks
     } // update
