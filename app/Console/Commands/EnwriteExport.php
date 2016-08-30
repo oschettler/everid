@@ -190,12 +190,18 @@ class EnwriteExport extends Command
 
     protected function updateNote(EvernoteStore $store, NoteMetadata $noteMetadata, $path)
     {
-        $note = $store->getNote($this->authToken, $noteMetadata->guid,
-            true, // withContent
-            true, // withResourcesData
-            false, // withResourcesRecognition
-            false // withResourcesAlternateData
-        );
+        try {
+            $note = $store->getNote($this->authToken, $noteMetadata->guid,
+                true, // withContent
+                true, // withResourcesData
+                false, // withResourcesRecognition
+                false // withResourcesAlternateData
+            );
+        }
+        catch (\Exception $e) {
+            $this->error($e->getMessage() . ' beim Laden von ' . $noteMetadata->guid);
+            return;
+        }
 
         $note->tagNames = $store->getNoteTagNames($this->authToken, $noteMetadata->guid);
 
@@ -267,7 +273,7 @@ url: {$url}
                 $spec->includeUpdated = true;
                 $spec->includeDeleted = true;
 
-                $this->comment("Updating '{$notebook->name}'");
+                $this->comment("*** Notebook '{$notebook->name}'");
 
                 // $this->updateSite();
 
@@ -279,6 +285,7 @@ url: {$url}
                 do {
                     $noteList = $store->findNotesMetadata($filter, $offset, self::BATCH_SIZE, $spec);
                     $totalNotes = $noteList->totalNotes;
+                    $this->comment('*** Exporting ' . $totalNotes . ' notes, offset ' . $offset);
                     $offset += self::BATCH_SIZE;
 
                     foreach ($noteList->notes as $noteMetadata) {
